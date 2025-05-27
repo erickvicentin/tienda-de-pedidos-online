@@ -1,0 +1,6 @@
+{
+  "name": "Tienda de Pedidos Online",
+  "description": "Una aplicación web para realizar pedidos de productos, optimizada para dispositivos móviles. Los pedidos se pueden gestionar a través de una hoja de cálculo (simulado).",
+  "requestFramePermissions": [],
+  "prompt": ""
+}
