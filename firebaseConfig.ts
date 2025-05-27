@@ -1,22 +1,19 @@
-
 import { initializeApp, FirebaseApp } from 'firebase/app';
 import { getAuth, Auth } from 'firebase/auth';
-import { getFirestore } from 'firebase/firestore'; // Import Firestore
+import { getFirestore } from 'firebase/firestore';
 
-// TODO: Reemplaza esto con tu configuración real de Firebase
 const firebaseConfig = {
-  apiKey: "AIzaSyBUv0GHD-JOVo-QOJKKe411BVaVhdS9MfE",
-  authDomain: "appauth-252bc.firebaseapp.com",
-  projectId: "appauth-252bc",
-  storageBucket: "appauth-252bc.firebasestorage.app",
-  messagingSenderId: "742248457265",
-  appId: "1:742248457265:web:81ebad55e7905591a8a110",
-  measurementId: "G-LTGXWX16HQ"
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID,
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID,
 };
 
-// Inicializar Firebase
 const app: FirebaseApp = initializeApp(firebaseConfig);
 const auth: Auth = getAuth(app);
-const db = getFirestore(app); // Initialize Firestore, type will be inferred
+const db = getFirestore(app);
 
-export { app, auth, db }; // Exportar app, auth y db
+export { app, auth, db };
