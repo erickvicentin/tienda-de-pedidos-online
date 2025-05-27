@@ -24,7 +24,7 @@ export interface CartItem extends Product {
 export interface CustomerInfo {
   name: string;
   phone: string;
-  email: string;
+  email?: string;
   address: string;
 }
 

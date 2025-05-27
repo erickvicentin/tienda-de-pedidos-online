@@ -10,7 +10,6 @@ const OrderForm: React.FC<OrderFormProps> = ({ onSubmit }) => {
   const [customerInfo, setCustomerInfo] = useState<CustomerInfo>({
     name: '',
     phone: '',
-    email: '',
     address: '',
   });
   const [errors, setErrors] = useState<Partial<CustomerInfo>>({});
@@ -29,11 +28,6 @@ const OrderForm: React.FC<OrderFormProps> = ({ onSubmit }) => {
         newErrors.phone = "El teléfono es obligatorio.";
     } else if (!/^\+?[0-9\s-()]{7,20}$/.test(customerInfo.phone)) {
         newErrors.phone = "El formato del teléfono no es válido.";
-    }
-    if (!customerInfo.email.trim()) {
-        newErrors.email = "El correo electrónico es obligatorio.";
-    } else if (!/\S+@\S+\.\S+/.test(customerInfo.email)) {
-        newErrors.email = "El formato del correo electrónico no es válido.";
     }
     if (!customerInfo.address.trim()) newErrors.address = "La dirección es obligatoria.";
     
@@ -63,11 +57,6 @@ const OrderForm: React.FC<OrderFormProps> = ({ onSubmit }) => {
         <label htmlFor="phone" className="block text-sm font-medium text-gray-700">Teléfono</label>
         <input type="tel" name="phone" id="phone" value={customerInfo.phone} onChange={handleChange} className={inputClass} required />
         {errors.phone && <p className={errorClass}>{errors.phone}</p>}
-      </div>
-      <div>
-        <label htmlFor="email" className="block text-sm font-medium text-gray-700">Correo Electrónico</label>
-        <input type="email" name="email" id="email" value={customerInfo.email} onChange={handleChange} className={inputClass} required />
-        {errors.email && <p className={errorClass}>{errors.email}</p>}
       </div>
       <div>
         <label htmlFor="address" className="block text-sm font-medium text-gray-700">Dirección de Entrega</label>
