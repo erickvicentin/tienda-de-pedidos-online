@@ -1,8 +1,8 @@
 {
   "name": "tienda-de-pedidos-online",
   "author": "Erick Vicentin",
-  "private": true,
-  "version": "1.0.0",
+  "private": false,
+  "version": "1.0.1",
   "type": "module",
   "homepage": "https://erickvicentin.github.io/tienda-de-pedidos-online",
   "scripts": {
