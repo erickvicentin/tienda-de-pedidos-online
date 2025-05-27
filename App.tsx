@@ -22,8 +22,8 @@ import AdminLogin from './components/admin/AdminLogin';
 
 const GENDER_FILTER_OPTIONS: string[] = ['Todos los Géneros', 'Masculina', 'Femenina', 'Unisex'];
 const ALL_AUTHORS_OPTION = 'Todos los Autores';
-const WHATSAPP_NUMBER = "+5493624123456"; 
-const WHATSAPP_MESSAGE = "Hola, estoy interesado/a en sus productos.";
+const WHATSAPP_NUMBER = "+543624965665"; 
+const WHATSAPP_MESSAGE = "Hola, estoy interesado/a en sus productos de Millanel.";
 
 const initialAppState: AppState = {
   products: [], // Los productos se cargarán desde Firebase
