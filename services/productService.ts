@@ -17,6 +17,17 @@ const productsCollectionRef = collection(db, 'products');
 // Helper para convertir Firestore doc a Product
 const mapDocToProduct = (docSnap: QueryDocumentSnapshot<DocumentData>): Product => {
     const data = docSnap.data();
+    const manualPriceRaw = data.manualPrice;
+    let manualPriceValue: number | undefined = undefined;
+
+    if (manualPriceRaw !== undefined) {
+        const parsed = Number(manualPriceRaw); // Intenta convertir a número (maneja strings y números)
+        if (!isNaN(parsed)) { // Verifica si la conversión fue exitosa
+            manualPriceValue = parsed;
+        } else {
+            console.warn(`Producto ID ${docSnap.id}: El campo manualPrice ("${manualPriceRaw}") no es un número válido. Se establecerá como indefinido.`);
+        }
+    }
     return {
         id: docSnap.id,
         name: data.name || '',
@@ -26,6 +37,7 @@ const mapDocToProduct = (docSnap: QueryDocumentSnapshot<DocumentData>): Product 
         gender: (data.gender as Gender) || 'Unisex',
         author: data.author || '',
         sizes: Array.isArray(data.sizes) ? data.sizes.filter(s => typeof s === 'number') : [],
+        manualPrice: manualPriceValue,
     };
 };
 
@@ -33,6 +45,7 @@ const mapDocToProduct = (docSnap: QueryDocumentSnapshot<DocumentData>): Product 
 export const getProducts = async (): Promise<Product[]> => {
   try {
     const data = await getDocs(productsCollectionRef);
+    console.log(data.docs)
     return data.docs.map(mapDocToProduct);
   } catch (error) {
     console.error("Error fetching products from Firestore:", error);
