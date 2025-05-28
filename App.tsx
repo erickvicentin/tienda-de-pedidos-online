@@ -1,4 +1,5 @@
 
+
 import React, { useEffect, useCallback, useMemo, useReducer } from 'react';
 import { 
   onAuthStateChanged, 
@@ -16,6 +17,7 @@ import CartView from './components/CartView';
 import LoadingSpinner from './components/LoadingSpinner';
 import Modal from './components/Modal';
 import ImagePreviewModal from './components/ImagePreviewModal'; // Importar ImagePreviewModal
+import WelcomeModal from './components/WelcomeModal'; // Importar WelcomeModal
 import WhatsAppIcon from './components/icons/WhatsAppIcon';
 import SettingsIcon from './components/icons/SettingsIcon';
 import AdminView from './components/admin/AdminView';
@@ -25,6 +27,7 @@ const GENDER_FILTER_OPTIONS: string[] = ['Todos los Géneros', 'Masculina', 'Fem
 const ALL_AUTHORS_OPTION = 'Todos los Autores';
 const WHATSAPP_NUMBER = "+543624965665";
 const WHATSAPP_MESSAGE = "Hola, estoy interesado/a en sus productos de Millanel.";
+const LOCAL_STORAGE_VISITED_KEY = 'millanelResistenciaHasVisited';
 
 const initialAppState: AppState = {
   products: [],
@@ -38,7 +41,8 @@ const initialAppState: AppState = {
   selectedGender: GENDER_FILTER_OPTIONS[0],
   selectedAuthor: ALL_AUTHORS_OPTION,
   availableAuthors: [ALL_AUTHORS_OPTION],
-  previewImageUrl: null, // Estado inicial para la URL de la imagen de vista previa
+  previewImageUrl: null,
+  showWelcomeModal: false, // Estado inicial para el modal de bienvenida
   editingProduct: null,
   productToDelete: null,
   currentUser: null,
@@ -152,6 +156,8 @@ function appReducer(state: AppState, action: AppAction): AppState {
       return state;
     case 'SET_PREVIEW_IMAGE_URL':
       return { ...state, previewImageUrl: action.payload };
+    case 'SET_SHOW_WELCOME_MODAL':
+      return { ...state, showWelcomeModal: action.payload };
 
     case 'ADMIN_ADD_PRODUCT':
       return {
@@ -227,14 +233,31 @@ const App: React.FC = () => {
 
   useEffect(() => {
     dispatch({ type: 'SET_AUTH_LOADING', payload: true });
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      dispatch({ type: 'SET_CURRENT_USER', payload: user as FirebaseUser | null });
+      const unsubscribe = onAuthStateChanged(auth, (user) => {
+        dispatch({ type: 'SET_CURRENT_USER', payload: user as FirebaseUser | null });
        if (!user && state.currentView.startsWith('admin_') && state.currentView !== 'admin_login') {
          dispatch({ type: 'SET_VIEW', payload: 'admin_login' });
        }
     });
     return () => unsubscribe();
-  }, []); 
+  }, []);
+
+  useEffect(() => {
+    // Check for first visit to show welcome modal
+    try {
+      const hasVisited = localStorage.getItem(LOCAL_STORAGE_VISITED_KEY);
+      if (!hasVisited) {
+        dispatch({ type: 'SET_SHOW_WELCOME_MODAL', payload: true });
+        localStorage.setItem(LOCAL_STORAGE_VISITED_KEY, 'true');
+      }
+    } catch (error) {
+      console.warn("Could not access localStorage for welcome modal:", error);
+      // Potentially dispatch to show welcome modal anyway if localStorage fails,
+      // or log this and proceed without. For now, just log and proceed.
+    }
+
+    loadProducts();
+  }, []); // Empty dependency array ensures this runs once on mount
 
   const loadProducts = useCallback(async () => {
     dispatch({ type: 'SET_PRODUCTS_LOADING', payload: true });
@@ -486,19 +509,32 @@ const App: React.FC = () => {
         <ImagePreviewModal imageUrl={state.previewImageUrl} onClose={handleCloseImagePreview} />
       )}
 
+      {state.showWelcomeModal && (
+        <WelcomeModal onClose={() => dispatch({ type: 'SET_SHOW_WELCOME_MODAL', payload: false })} />
+      )}
+
       {state.error && state.currentView !== 'cart' && state.currentView !== 'error' && !state.isSubmittingOrder && (
         <Modal title="Error" message={state.error} type="error" onClose={() => {
           dispatch({ type: 'CLEAR_ERROR' });
-            if (state.currentView !== 'products' && state.currentView !== 'confirmation') {
-                 dispatch({type: 'SET_VIEW', payload: 'products'});
+          if (state.products.length === 0 && !state.isLoadingProducts) {
+            loadProducts();
+          } else if (state.currentView !== 'products' && state.currentView !== 'confirmation') {
+            dispatch({ type: 'SET_VIEW', payload: 'products' });
           }
         }} />
       )}
       {state.error && state.currentView === 'error' && !state.isLoadingProducts && state.products.length === 0 && !state.isSubmittingOrder && (
-         <Modal title="Error de Carga" message={state.error} type="error" onClose={() => {
+        <Modal title="Error de Carga de Productos" message={state.error} type="error"
+          confirmText="Reintentar Carga"
+          onConfirm={() => {
             dispatch({ type: 'CLEAR_ERROR' });
+            dispatch({ type: 'SET_VIEW', payload: 'products' });
             loadProducts();
-          }} />
+          }}
+          onClose={() => {
+            dispatch({ type: 'CLEAR_ERROR' });
+          }}
+        />
       )}
       {state.error && state.currentView === 'cart' && !state.isSubmittingOrder && (
         <Modal title="Error en el Pedido" message={state.error} type="error" onClose={() => dispatch({ type: 'CLEAR_ERROR' })} />

@@ -9,17 +9,17 @@ export interface Product {
   name: string;
   description: string;
   imageUrl: string;
-  category: ProductCategory; 
+  category: ProductCategory;
   gender: Gender;
   author: string;
-  sizes: number[]; 
+  sizes: number[];
   manualPrice?: number; // Added for manual pricing
 }
 
 export interface CartItem extends Product {
   quantity: number;
-  selectedSize: number; 
-  price: number; 
+  selectedSize: number;
+  price: number;
 }
 
 export interface CustomerInfo {
@@ -36,10 +36,10 @@ export interface Order {
   orderDate: string;
 }
 
-export type ViewState = 
-  | 'products' 
-  | 'cart' 
-  | 'confirmation' 
+export type ViewState =
+  | 'products'
+  | 'cart'
+  | 'confirmation'
   | 'error'
   | 'admin_login' // Vista para login
   | 'admin_product_list'
@@ -65,11 +65,12 @@ export interface AppState {
   selectedAuthor: string;
   availableAuthors: string[];
   previewImageUrl: string | null; // Para el modal de vista previa de imagen
-  
+  showWelcomeModal: boolean; // Para el modal de bienvenida
+
   // Estados de Admin
-  editingProduct: Product | null; 
-  productToDelete: Product | null; 
-  
+  editingProduct: Product | null;
+  productToDelete: Product | null;
+
   // Estados de Autenticación de Firebase
   currentUser: User | null; // Usuario de Firebase
   authLoading: boolean; // Para saber si se está cargando el estado de auth
@@ -99,7 +100,8 @@ export type AppAction =
   | { type: 'SET_SELECTED_AUTHOR'; payload: string }
   | { type: 'RESET_AUTHOR_FILTER_IF_NEEDED' }
   | { type: 'SET_PREVIEW_IMAGE_URL', payload: string | null } // Para el modal de vista previa
-  
+  | { type: 'SET_SHOW_WELCOME_MODAL', payload: boolean } // Para el modal de bienvenida
+
   // Acciones de Admin (Productos)
   // Estas acciones ahora actualizarán el estado local DESPUÉS de una operación exitosa en Firestore
   | { type: 'ADMIN_ADD_PRODUCT'; payload: Product } // Payload es el producto con ID de Firestore
