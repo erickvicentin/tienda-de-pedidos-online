@@ -1,8 +1,15 @@
 
-import type { User } from 'firebase/auth'; // Importar User de Firebase
+
+// Mock User interface, replacing Firebase User
+export interface MockUser {
+  uid: string;
+  email?: string;
+  displayName?: string; // Optional: if you want to display a name
+}
 
 export type Gender = 'Masculina' | 'Femenina' | 'Unisex';
-export type ProductCategory = 'Fragancia' | 'Otra';
+export type ProductCategory = 'Fragancia' | 'Cosmética' | 'Accesorio' | 'Bazar' | 'Otra';
+
 
 export interface Product {
   id: string;
@@ -13,6 +20,7 @@ export interface Product {
   gender: Gender;
   author: string;
   sizes: number[]; 
+  manualPrice?: number; // Added for manual pricing
 }
 
 export interface CartItem extends Product {
@@ -63,17 +71,18 @@ export interface AppState {
   selectedGender: string;
   selectedAuthor: string;
   availableAuthors: string[];
+  previewImageUrl: string | null; // Para el modal de vista previa de imagen
   
   // Estados de Admin
   editingProduct: Product | null; 
   productToDelete: Product | null; 
   
-  // Estados de Autenticación de Firebase
-  currentUser: User | null; // Usuario de Firebase
-  authLoading: boolean; // Para saber si se está cargando el estado de auth
-  authError: string | null; // Errores de login
+  // Estados de Autenticación (Mock)
+  currentUser: MockUser | null; // Usuario Mock
+  authLoading: boolean; 
+  authError: string | null; 
 
-  // Nuevos estados para operaciones de admin con Firebase
+  // Nuevos estados para operaciones de admin con Mock Service
   isAdminOperationLoading: boolean;
   adminOperationError: string | null;
 }
@@ -90,33 +99,33 @@ export type AppAction =
   | { type: 'SET_ORDER_SUBMITTING'; payload: boolean }
   | { type: 'SET_ORDER_SUCCESS'; payload: { title: string; message: string; orderId?: string } }
   | { type: 'SET_ORDER_ERROR'; payload: string }
-  | { type: 'CLEAR_ERROR' } // Limpia error general de la app
+  | { type: 'CLEAR_ERROR' } 
   | { type: 'CLEAR_CONFIRMATION' }
   | { type: 'SET_SEARCH_TERM'; payload: string }
   | { type: 'SET_SELECTED_GENDER'; payload: string }
   | { type: 'SET_SELECTED_AUTHOR'; payload: string }
   | { type: 'RESET_AUTHOR_FILTER_IF_NEEDED' }
+  | { type: 'SET_PREVIEW_IMAGE_URL', payload: string | null } // Para el modal de vista previa
   
-  // Acciones de Admin (Productos)
-  // Estas acciones ahora actualizarán el estado local DESPUÉS de una operación exitosa en Firestore
-  | { type: 'ADMIN_ADD_PRODUCT'; payload: Product } // Payload es el producto con ID de Firestore
-  | { type: 'ADMIN_UPDATE_PRODUCT'; payload: Product } // Payload es el producto actualizado
+  // Acciones de Admin (Productos con Mock Service)
+  | { type: 'ADMIN_ADD_PRODUCT'; payload: Product } 
+  | { type: 'ADMIN_UPDATE_PRODUCT'; payload: Product } 
   | { type: 'ADMIN_DELETE_PRODUCT'; payload: string } // productId
   | { type: 'ADMIN_SELECT_PRODUCT_FOR_EDIT'; payload: Product | null }
   | { type: 'ADMIN_CONFIRM_DELETE_PRODUCT'; payload: Product | null }
   | { type: 'ADMIN_CANCEL_DELETE_PRODUCT' }
 
-  // Acciones de Autenticación de Firebase
-  | { type: 'SET_AUTH_LOADING'; payload: boolean }
-  | { type: 'SET_CURRENT_USER'; payload: User | null }
+  // Acciones de Autenticación (Mock)
+  | { type: 'SET_AUTH_LOADING'; payload: boolean } // Puede ser usado para simular carga
+  | { type: 'SET_CURRENT_USER'; payload: MockUser | null }
   | { type: 'SET_AUTH_ERROR'; payload: string | null }
-  | { type: 'FIREBASE_LOGIN_REQUEST' } 
-  | { type: 'FIREBASE_LOGIN_SUCCESS'; payload: User }
-  | { type: 'FIREBASE_LOGIN_FAILURE'; payload: string }
-  | { type: 'FIREBASE_LOGOUT_REQUEST' }
-  | { type: 'FIREBASE_LOGOUT_SUCCESS' }
+  | { type: 'MOCK_LOGIN_REQUEST' } 
+  | { type: 'MOCK_LOGIN_SUCCESS'; payload: MockUser }
+  | { type: 'MOCK_LOGIN_FAILURE'; payload: string }
+  | { type: 'MOCK_LOGOUT_REQUEST' }
+  | { type: 'MOCK_LOGOUT_SUCCESS' }
 
-  // Nuevas acciones para operaciones de admin con Firebase
+  // Acciones para operaciones de admin con Mock Service
   | { type: 'SET_ADMIN_OPERATION_LOADING'; payload: boolean }
   | { type: 'SET_ADMIN_OPERATION_ERROR'; payload: string | null }
   | { type: 'CLEAR_ADMIN_OPERATION_ERROR' };
