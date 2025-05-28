@@ -21,6 +21,7 @@ interface ProductFormState {
   gender: Gender;
   author: string;
   sizes: number[];
+  manualPrice: string; // Stored as string for input, converted to number on save
 }
 
 // Define the initial state for a new product, conforming to ProductFormState
@@ -33,38 +34,46 @@ const newProductInitialState: ProductFormState = {
   gender: 'Unisex',
   author: '',
   sizes: [],
+  manualPrice: '',
 };
 
 const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel, isLoading }) => {
-  // Initialize formData state. If 'product' prop is provided, use its data; otherwise, use newProductInitialState.
   const [formData, setFormData] = useState<ProductFormState>(
-    product ? { ...product, id: product.id } : newProductInitialState
+    product ? 
+      { 
+        ...product, 
+        id: product.id, 
+        manualPrice: product.manualPrice !== undefined ? String(product.manualPrice) : '' 
+      } : 
+      newProductInitialState
   );
   
   const [sizesInput, setSizesInput] = useState(product?.sizes.join(', ') || '');
-  const [formErrors, setFormErrors] = useState<Partial<Omit<ProductFormState, 'sizes' | 'id'>> & { sizes?: string }>({});
+  const [formErrors, setFormErrors] = useState<Partial<Omit<ProductFormState, 'sizes' | 'id' | 'manualPrice'>> & { sizes?: string, manualPrice?: string }>({});
 
-  // useEffect to update form state when 'product' prop changes
   useEffect(() => {
     if (product) {
-      // Editing an existing product
       setFormData({
-        ...product, // 'product' is type Product, so 'id' is string.
+        ...product,
+        manualPrice: product.manualPrice !== undefined ? String(product.manualPrice) : '',
       });
       setSizesInput(product.sizes.join(', '));
     } else {
-      // Adding a new product or clearing the form
       setFormData(newProductInitialState);
       setSizesInput('');
     }
-    setFormErrors({}); // Reset errors when product context changes
+    setFormErrors({});
   }, [product]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value as any })); // Use 'as any' for simplicity or create a more robust handler
+    setFormData(prev => ({ ...prev, [name]: value as any }));
     if (formErrors[name as keyof typeof formErrors]) {
         setFormErrors(prev => ({...prev, [name]: undefined}));
+    }
+    // If category changes, clear manualPrice error if it's no longer relevant or re-validate
+    if (name === 'category') {
+        setFormErrors(prev => ({...prev, manualPrice: undefined}));
     }
   };
 
@@ -76,7 +85,7 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel, is
   };
   
   const validateForm = (): boolean => {
-    const errors: Partial<Omit<ProductFormState, 'sizes' | 'id'>> & { sizes?: string } = {};
+    const errors: Partial<Omit<ProductFormState, 'sizes' | 'id' | 'manualPrice'>> & { sizes?: string, manualPrice?: string } = {};
     if (!formData.name.trim()) errors.name = "El nombre es obligatorio.";
     if (!formData.author.trim()) errors.author = "El autor es obligatorio.";
     if (!formData.description.trim()) errors.description = "La descripción es obligatoria.";
@@ -90,11 +99,20 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel, is
         }
     }
 
-    const parsedSizes = sizesInput.split(',').map(s => parseInt(s.trim(), 10)).filter(n => !isNaN(n) && n > 0);
-    if (parsedSizes.length === 0 && sizesInput.trim() !== '' && sizesInput.trim() !== '0') {
-      errors.sizes = "Los tamaños deben ser números positivos separados por comas (ej: 30,60,100) o dejar vacío si no aplica. Si un tamaño es 0, ingrese solo '0'.";
-    } else if (sizesInput.trim() === '') {
-        // Es válido tener tamaños vacíos
+    if (formData.category !== 'Fragancia') {
+      if (!formData.manualPrice.trim()) {
+        errors.manualPrice = "El precio manual es obligatorio para esta categoría.";
+      } else {
+        const priceNum = parseFloat(formData.manualPrice);
+        if (isNaN(priceNum) || priceNum <= 0) {
+          errors.manualPrice = "El precio manual debe ser un número positivo.";
+        }
+      }
+    }
+
+    const parsedSizes = sizesInput.split(',').map(s => parseInt(s.trim(), 10)).filter(n => !isNaN(n) && n >= 0);
+    if (parsedSizes.length === 0 && sizesInput.trim() !== '' && !parsedSizes.includes(0)) { // Allow '0' if it's the only input and parsed correctly
+         errors.sizes = "Los tamaños deben ser números positivos (o cero) separados por comas (ej: 30,50,0) o dejar vacío.";
     }
     
     setFormErrors(errors);
@@ -109,10 +127,11 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel, is
 
     const finalSizes = sizesInput.split(',')
       .map(s => parseInt(s.trim(), 10))
-      .filter(n => !isNaN(n) && n >= 0);
+      .filter(n => !isNaN(n) && n >= 0); // Allow 0 for informational sizes
 
-    // Ensure productPayload matches Omit<Product, 'id'> or Product structure for onSave
-    const productPayloadBase = {
+    const manualPriceNum = formData.category !== 'Fragancia' && formData.manualPrice.trim() !== '' ? parseFloat(formData.manualPrice) : undefined;
+
+    const productPayloadBase: Omit<Product, 'id'> = {
         name: formData.name,
         description: formData.description,
         imageUrl: formData.imageUrl,
@@ -120,17 +139,19 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel, is
         gender: formData.gender,
         author: formData.author,
         sizes: finalSizes,
+        manualPrice: manualPriceNum,
     };
     
-    if (formData.id) { // If formData.id exists (string), it's an update
-      await onSave({ ...productPayloadBase, id: formData.id });
-    } else { // If formData.id is undefined, it's a new product
+    if (formData.id) { 
+      await onSave({ ...productPayloadBase, id: formData.id, manualPrice: manualPriceNum });
+    } else { 
       await onSave(productPayloadBase);
     }
   };
   
   const inputClass = "mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary sm:text-sm";
   const errorClass = "text-red-500 text-xs mt-1";
+  const isFragrance = formData.category === 'Fragancia';
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6 p-6 bg-white shadow-lg rounded-lg max-w-2xl mx-auto">
@@ -181,8 +202,28 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel, is
         </div>
       </div>
 
+      {!isFragrance && (
+        <div>
+          <label htmlFor="manualPrice" className="block text-sm font-medium text-gray-700">Precio Manual ($)</label>
+          <input 
+            type="number" 
+            name="manualPrice" 
+            id="manualPrice" 
+            value={formData.manualPrice} 
+            onChange={handleChange} 
+            className={inputClass}
+            placeholder="Ej: 5000"
+            step="0.01"
+          />
+          {formErrors.manualPrice && <p className={errorClass}>{formErrors.manualPrice}</p>}
+          <p className="text-xs text-gray-500 mt-1">Obligatorio si la categoría no es Fragancia. Ingrese el precio final del producto.</p>
+        </div>
+      )}
+
       <div>
-        <label htmlFor="sizes" className="block text-sm font-medium text-gray-700">Tamaños (ml, separados por coma)</label>
+        <label htmlFor="sizes" className="block text-sm font-medium text-gray-700">
+          {isFragrance ? 'Tamaños (ml, separados por coma)' : 'Tamaños/Pesos (informativo, separados por coma)'}
+        </label>
         <input 
           type="text" 
           name="sizes" 
@@ -190,10 +231,15 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel, is
           value={sizesInput} 
           onChange={handleSizesChange} 
           className={inputClass}
-          placeholder="Ej: 30,60,100 o 0 si aplica"
+          placeholder={isFragrance ? "Ej: 30,60,100" : "Ej: 50 (para 50g), o dejar vacío"}
         />
         {formErrors.sizes && <p className={errorClass}>{formErrors.sizes}</p>}
-        <p className="text-xs text-gray-500 mt-1">Dejar vacío si no tiene tamaños. Usar '0' para productos sin tamaño específico pero con precio único (ej. un accesorio).</p>
+        <p className="text-xs text-gray-500 mt-1">
+          {isFragrance 
+            ? "Para Fragancias: Tamaños disponibles para la venta (ej: 30,60,100)."
+            : "Para otros productos: ingrese tamaños/pesos informativos (ej: 50 para 50g/ml) o deje vacío si no aplica. El precio se define manualmente."
+          }
+        </p>
       </div>
 
 

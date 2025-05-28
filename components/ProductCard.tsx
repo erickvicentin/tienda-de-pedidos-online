@@ -9,41 +9,51 @@ interface ProductCardProps {
 }
 
 const ProductCard: React.FC<ProductCardProps> = ({ product, onAddToCart }) => {
-  // Inicializar selectedSize con el primer tamaño del producto que tenga un precio definido globalmente.
+  const isFragrance = product.category === 'Fragancia';
+
   const getInitialSelectableSize = () => {
+    if (!isFragrance || product.sizes.length === 0) {
+      return product.sizes.length > 0 ? product.sizes[0] : 0; // Default for non-fragrance or empty sizes
+    }
     const firstAvailableSize = product.sizes.find(size => GLOBAL_SIZE_PRICES[size] !== undefined);
-    return firstAvailableSize || 0; // 0 si ningún tamaño del producto tiene precio global
-  }
+    return firstAvailableSize || 0;
+  };
   
   const [selectedSize, setSelectedSize] = useState<number>(getInitialSelectableSize());
 
+  useEffect(() => {
+    // Reset selectedSize if product changes, especially for fragrances
+    setSelectedSize(getInitialSelectableSize());
+  }, [product.id, product.category, product.sizes]);
+
+
   const currentPrice = useMemo(() => {
-    if (!selectedSize || GLOBAL_SIZE_PRICES[selectedSize] === undefined) {
-      return 0; // O un valor por defecto apropiado si no se encuentra ningún precio
+    if (!isFragrance && product.manualPrice !== undefined && product.manualPrice > 0) {
+      return product.manualPrice;
     }
-    return GLOBAL_SIZE_PRICES[selectedSize];
-  }, [selectedSize]);
+    if (isFragrance && selectedSize && GLOBAL_SIZE_PRICES[selectedSize] !== undefined) {
+      return GLOBAL_SIZE_PRICES[selectedSize];
+    }
+    return 0; // Default to 0 if no price can be determined
+  }, [product, selectedSize, isFragrance]);
 
   const handleAddToCartClick = () => {
-    if (selectedSize > 0 && GLOBAL_SIZE_PRICES[selectedSize] !== undefined) {
-      onAddToCart(product, selectedSize, currentPrice);
+    const priceToAdd = currentPrice;
+    if (priceToAdd > 0) {
+      // For non-fragrances with manual price, selectedSize can be the first informational size or 0.
+      // For fragrances, it's the actual selected size.
+      const sizeForCart = isFragrance ? selectedSize : (product.sizes.length > 0 ? product.sizes[0] : 0);
+      onAddToCart(product, sizeForCart, priceToAdd);
     }
   };
 
-  useEffect(() => {
-    // Re-evaluar el tamaño seleccionado si el producto o los precios globales cambian.
-    // Esto es útil si los productos se cargan dinámicamente o los precios globales cambian.
-    const currentInitialSize = getInitialSelectableSize();
-    if (selectedSize === 0 && currentInitialSize !== 0) {
-      setSelectedSize(currentInitialSize);
-    } else if (selectedSize !== 0 && GLOBAL_SIZE_PRICES[selectedSize] === undefined) {
-      // Si el tamaño actualmente seleccionado ya no tiene un precio global,
-      // intentar reestablecerlo a un tamaño válido.
-      setSelectedSize(currentInitialSize);
-    }
-  }, [product.sizes, selectedSize]); // Dependencia en product.sizes por si el producto cambia.
+  // For fragrances, filter sizes that have a price in GLOBAL_SIZE_PRICES
+  const availableSizesWithPricesForFragrance = isFragrance 
+    ? product.sizes.filter(size => GLOBAL_SIZE_PRICES[size] !== undefined)
+    : [];
 
-  const availableSizesWithPrices = product.sizes.filter(size => GLOBAL_SIZE_PRICES[size] !== undefined);
+  const canAddToCart = currentPrice > 0;
+  const showSizeSelector = isFragrance && availableSizesWithPricesForFragrance.length > 0;
 
   return (
     <div className="bg-white rounded-xl shadow-lg overflow-hidden flex flex-col transition-all duration-300 hover:shadow-2xl h-full">
@@ -59,11 +69,11 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onAddToCart }) => {
         <p className="text-sm text-gray-500 mb-2">Género: {product.gender}</p>
         <p className="text-sm text-gray-600 flex-grow mb-3">{product.description}</p>
         
-        {availableSizesWithPrices.length > 0 ? (
+        {showSizeSelector && (
           <div className="mb-4">
             <p className="text-sm font-medium text-gray-700 mb-1">Tamaño:</p>
             <div className="flex space-x-2 flex-wrap gap-y-2">
-              {availableSizesWithPrices.map((size) => (
+              {availableSizesWithPricesForFragrance.map((size) => (
                 <button
                   key={size}
                   onClick={() => setSelectedSize(size)}
@@ -77,9 +87,19 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onAddToCart }) => {
               ))}
             </div>
           </div>
-        ) : (
-          <p className="text-sm text-red-500 mb-4">No hay tamaños con precios definidos para este producto.</p>
         )}
+        
+        {!isFragrance && product.sizes && product.sizes.length > 0 && (
+             <p className="text-sm text-gray-500 mb-2">Presentación: {product.sizes.join(', ')}{product.category === "Cosmética" || product.category === "Accesorio" ? " (ej. g/ml/unidad)" : "ml"}</p>
+        )}
+
+        {isFragrance && availableSizesWithPricesForFragrance.length === 0 && (
+            <p className="text-sm text-red-500 mb-4">No hay tamaños con precios definidos para esta fragancia.</p>
+        )}
+         {!isFragrance && product.manualPrice === undefined && (
+            <p className="text-sm text-red-500 mb-4">Precio no definido para este producto.</p>
+        )}
+
 
         <div className="flex justify-between items-center mt-auto">
           <p className="text-2xl font-bold text-primary">
@@ -87,7 +107,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onAddToCart }) => {
           </p>
           <button
             onClick={handleAddToCartClick}
-            disabled={!selectedSize || currentPrice === 0}
+            disabled={!canAddToCart}
             className="bg-accent hover:bg-purple-600 text-white font-semibold py-2 px-4 rounded-lg shadow-md hover:shadow-lg transition-all duration-200 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-opacity-50 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Añadir
