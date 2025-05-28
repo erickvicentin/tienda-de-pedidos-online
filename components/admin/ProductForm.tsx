@@ -5,7 +5,7 @@ import { AVAILABLE_PRODUCT_CATEGORIES } from '../../constants';
 import LoadingSpinner from '../LoadingSpinner'; // Para el botón
 
 interface ProductFormProps {
-  product: Product | null; 
+  product: Product | null;
   onSave: (productData: Product | Omit<Product, 'id'>) => Promise<void>;
   onCancel: () => void;
   isLoading: boolean;
@@ -39,15 +39,15 @@ const newProductInitialState: ProductFormState = {
 
 const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel, isLoading }) => {
   const [formData, setFormData] = useState<ProductFormState>(
-    product ? 
-      { 
-        ...product, 
-        id: product.id, 
-        manualPrice: product.manualPrice !== undefined ? String(product.manualPrice) : '' 
-      } : 
+    product ?
+      {
+        ...product,
+        id: product.id,
+        manualPrice: product.manualPrice !== undefined ? String(product.manualPrice) : ''
+      } :
       newProductInitialState
   );
-  
+
   const [sizesInput, setSizesInput] = useState(product?.sizes.join(', ') || '');
   const [formErrors, setFormErrors] = useState<Partial<Omit<ProductFormState, 'sizes' | 'id' | 'manualPrice'>> & { sizes?: string, manualPrice?: string }>({});
 
@@ -69,34 +69,34 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel, is
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value as any }));
     if (formErrors[name as keyof typeof formErrors]) {
-        setFormErrors(prev => ({...prev, [name]: undefined}));
+      setFormErrors(prev => ({ ...prev, [name]: undefined }));
     }
     // If category changes, clear manualPrice error if it's no longer relevant or re-validate
     if (name === 'category') {
-        setFormErrors(prev => ({...prev, manualPrice: undefined}));
+      setFormErrors(prev => ({ ...prev, manualPrice: undefined }));
     }
   };
 
   const handleSizesChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSizesInput(e.target.value);
-     if (formErrors.sizes) {
-        setFormErrors(prev => ({...prev, sizes: undefined}));
+    if (formErrors.sizes) {
+      setFormErrors(prev => ({ ...prev, sizes: undefined }));
     }
   };
-  
+
   const validateForm = (): boolean => {
     const errors: Partial<Omit<ProductFormState, 'sizes' | 'id' | 'manualPrice'>> & { sizes?: string, manualPrice?: string } = {};
     if (!formData.name.trim()) errors.name = "El nombre es obligatorio.";
     if (!formData.author.trim()) errors.author = "El autor es obligatorio.";
     if (!formData.description.trim()) errors.description = "La descripción es obligatoria.";
     if (!formData.imageUrl.trim()) {
-        errors.imageUrl = "La URL de la imagen es obligatoria.";
+      errors.imageUrl = "La URL de la imagen es obligatoria.";
     } else {
-        try {
-            new URL(formData.imageUrl);
-        } catch (_) {
-            errors.imageUrl = "La URL de la imagen no es válida.";
-        }
+      try {
+        new URL(formData.imageUrl);
+      } catch (_) {
+        errors.imageUrl = "La URL de la imagen no es válida.";
+      }
     }
 
     if (formData.category !== 'Fragancia') {
@@ -112,9 +112,9 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel, is
 
     const parsedSizes = sizesInput.split(',').map(s => parseInt(s.trim(), 10)).filter(n => !isNaN(n) && n >= 0);
     if (parsedSizes.length === 0 && sizesInput.trim() !== '' && !parsedSizes.includes(0)) { // Allow '0' if it's the only input and parsed correctly
-         errors.sizes = "Los tamaños deben ser números positivos (o cero) separados por comas (ej: 30,50,0) o dejar vacío.";
+      errors.sizes = "Los tamaños deben ser números positivos (o cero) separados por comas (ej: 30,50,0) o dejar vacío.";
     }
-    
+
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
   };
@@ -122,7 +122,7 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel, is
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (!validateForm()) {
-        return;
+      return;
     }
 
     const finalSizes = sizesInput.split(',')
@@ -131,24 +131,30 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel, is
 
     const manualPriceNum = formData.category !== 'Fragancia' && formData.manualPrice.trim() !== '' ? parseFloat(formData.manualPrice) : undefined;
 
-    const productPayloadBase: Omit<Product, 'id'> = {
-        name: formData.name,
-        description: formData.description,
-        imageUrl: formData.imageUrl,
-        category: formData.category,
-        gender: formData.gender,
-        author: formData.author,
-        sizes: finalSizes,
-        manualPrice: manualPriceNum,
+    // Base product data object
+    const productDataForSave: any = {
+      name: formData.name,
+      description: formData.description,
+      imageUrl: formData.imageUrl,
+      category: formData.category,
+      gender: formData.gender,
+      author: formData.author,
+      sizes: finalSizes,
     };
-    
-    if (formData.id) { 
-      await onSave({ ...productPayloadBase, id: formData.id, manualPrice: manualPriceNum });
-    } else { 
-      await onSave(productPayloadBase);
+
+    // Conditionally add manualPrice to the object
+    if (manualPriceNum !== undefined) {
+      productDataForSave.manualPrice = manualPriceNum;
+    }
+
+    if (formData.id) {
+      productDataForSave.id = formData.id;
+      await onSave(productDataForSave as Product);
+    } else {
+      await onSave(productDataForSave as Omit<Product, 'id'>);
     }
   };
-  
+
   const inputClass = "mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary sm:text-sm";
   const errorClass = "text-red-500 text-xs mt-1";
   const isFragrance = formData.category === 'Fragancia';
@@ -158,7 +164,7 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel, is
       <h2 className="text-2xl font-semibold text-gray-800 mb-6">
         {formData.id ? 'Editar Producto' : 'Añadir Nuevo Producto'}
       </h2>
-      
+
       <div>
         <label htmlFor="name" className="block text-sm font-medium text-gray-700">Nombre del Producto</label>
         <input type="text" name="name" id="name" value={formData.name} onChange={handleChange} className={inputClass} />
@@ -182,7 +188,7 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel, is
         <input type="url" name="imageUrl" id="imageUrl" value={formData.imageUrl} onChange={handleChange} className={inputClass} />
         {formErrors.imageUrl && <p className={errorClass}>{formErrors.imageUrl}</p>}
       </div>
-      
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
           <label htmlFor="category" className="block text-sm font-medium text-gray-700">Categoría</label>
@@ -205,12 +211,12 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel, is
       {!isFragrance && (
         <div>
           <label htmlFor="manualPrice" className="block text-sm font-medium text-gray-700">Precio Manual ($)</label>
-          <input 
-            type="number" 
-            name="manualPrice" 
-            id="manualPrice" 
-            value={formData.manualPrice} 
-            onChange={handleChange} 
+          <input
+            type="number"
+            name="manualPrice"
+            id="manualPrice"
+            value={formData.manualPrice}
+            onChange={handleChange}
             className={inputClass}
             placeholder="Ej: 5000"
             step="0.01"
@@ -224,18 +230,18 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel, is
         <label htmlFor="sizes" className="block text-sm font-medium text-gray-700">
           {isFragrance ? 'Tamaños (ml, separados por coma)' : 'Tamaños/Pesos (informativo, separados por coma)'}
         </label>
-        <input 
-          type="text" 
-          name="sizes" 
-          id="sizes" 
-          value={sizesInput} 
-          onChange={handleSizesChange} 
+        <input
+          type="text"
+          name="sizes"
+          id="sizes"
+          value={sizesInput}
+          onChange={handleSizesChange}
           className={inputClass}
           placeholder={isFragrance ? "Ej: 30,60,100" : "Ej: 50 (para 50g), o dejar vacío"}
         />
         {formErrors.sizes && <p className={errorClass}>{formErrors.sizes}</p>}
         <p className="text-xs text-gray-500 mt-1">
-          {isFragrance 
+          {isFragrance
             ? "Para Fragancias: Tamaños disponibles para la venta (ej: 30,60,100)."
             : "Para otros productos: ingrese tamaños/pesos informativos (ej: 50 para 50g/ml) o deje vacío si no aplica. El precio se define manualmente."
           }
@@ -257,8 +263,8 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel, is
           disabled={isLoading}
           className="bg-primary hover:bg-pink-600 text-white font-semibold py-2 px-4 rounded-lg shadow-md hover:shadow-lg transition-colors disabled:opacity-70 flex items-center justify-center min-w-[120px]"
         >
-          {isLoading ? 
-            <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-white"></div> : 
+          {isLoading ?
+            <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-white"></div> :
             (formData.id ? 'Guardar Cambios' : 'Crear Producto')}
         </button>
       </div>
