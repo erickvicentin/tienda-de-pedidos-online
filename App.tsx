@@ -16,8 +16,9 @@ import ProductList from './components/ProductList';
 import CartView from './components/CartView';
 import LoadingSpinner from './components/LoadingSpinner';
 import Modal from './components/Modal';
-import ImagePreviewModal from './components/ImagePreviewModal'; // Importar ImagePreviewModal
-import WelcomeModal from './components/WelcomeModal'; // Importar WelcomeModal
+import ImagePreviewModal from './components/ImagePreviewModal';
+import WelcomeModal from './components/WelcomeModal';
+import Snackbar from './components/Snackbar'; // Import Snackbar
 import WhatsAppIcon from './components/icons/WhatsAppIcon';
 import SettingsIcon from './components/icons/SettingsIcon';
 import AdminView from './components/admin/AdminView';
@@ -42,7 +43,8 @@ const initialAppState: AppState = {
   selectedAuthor: ALL_AUTHORS_OPTION,
   availableAuthors: [ALL_AUTHORS_OPTION],
   previewImageUrl: null,
-  showWelcomeModal: false, // Estado inicial para el modal de bienvenida
+  showWelcomeModal: false,
+  snackbarMessage: null, // Initial state for snackbar
   editingProduct: null,
   productToDelete: null,
   currentUser: null,
@@ -158,6 +160,10 @@ function appReducer(state: AppState, action: AppAction): AppState {
       return { ...state, previewImageUrl: action.payload };
     case 'SET_SHOW_WELCOME_MODAL':
       return { ...state, showWelcomeModal: action.payload };
+    case 'SHOW_SNACKBAR':
+      return { ...state, snackbarMessage: action.payload };
+    case 'HIDE_SNACKBAR':
+      return { ...state, snackbarMessage: null };
 
     case 'ADMIN_ADD_PRODUCT':
       return {
@@ -257,7 +263,16 @@ const App: React.FC = () => {
     }
 
     loadProducts();
-  }, []); // Empty dependency array ensures this runs once on mount
+  }, []);
+
+  useEffect(() => {
+    if (state.snackbarMessage) {
+      const timer = setTimeout(() => {
+        dispatch({ type: 'HIDE_SNACKBAR' });
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [state.snackbarMessage]);
 
   const loadProducts = useCallback(async () => {
     dispatch({ type: 'SET_PRODUCTS_LOADING', payload: true });
@@ -376,12 +391,13 @@ const App: React.FC = () => {
     dispatch({ type: 'CLEAR_ADMIN_OPERATION_ERROR' });
     try {
       if ('id' in productData && productData.id) {
-            await productService.updateProduct(productData.id, productData as Product);
+        await productService.updateProduct(productData.id, productData as Product);
         dispatch({ type: 'ADMIN_UPDATE_PRODUCT', payload: productData as Product });
       } else {
-            const newProductWithId = await productService.addProduct(productData as Omit<Product, 'id'>);
+        const newProductWithId = await productService.addProduct(productData as Omit<Product, 'id'>);
         dispatch({ type: 'ADMIN_ADD_PRODUCT', payload: newProductWithId });
       }
+      dispatch({ type: 'SHOW_SNACKBAR', payload: '¡Producto guardado exitosamente!' });
     } catch (error) {
         console.error("Error guardando producto:", error);
       const message = error instanceof Error ? error.message : 'No se pudo guardar el producto.';
@@ -393,8 +409,9 @@ const App: React.FC = () => {
     dispatch({ type: 'SET_ADMIN_OPERATION_LOADING', payload: true });
     dispatch({ type: 'CLEAR_ADMIN_OPERATION_ERROR' });
     try {
-        await productService.deleteProduct(productId);
+      await productService.deleteProduct(productId);
       dispatch({ type: 'ADMIN_DELETE_PRODUCT', payload: productId });
+      dispatch({ type: 'SHOW_SNACKBAR', payload: '¡Producto eliminado exitosamente!' }); // Snackbar for delete
     } catch (error) {
         console.error("Error eliminando producto:", error);
       const message = error instanceof Error ? error.message : 'No se pudo eliminar el producto.';
@@ -415,8 +432,8 @@ const App: React.FC = () => {
 
     if (state.currentView.startsWith('admin_')) {
       if (!state.currentUser) {
-        dispatch({type: 'SET_VIEW', payload: 'admin_login'});
-        return <LoadingSpinner />; 
+        dispatch({ type: 'SET_VIEW', payload: 'admin_login' });
+        return <AdminLogin dispatch={dispatch} authError={"Acceso denegado. Por favor, inicie sesión."} authLoading={false} />;
       }
       return (
         <AdminView
@@ -450,8 +467,8 @@ const App: React.FC = () => {
       {!state.currentView.startsWith('admin_') && (
         <Navbar
           cartItemCount={cartItemCount}
-          onCartClick={() => dispatch({ type: 'SET_VIEW', payload: 'cart'})}
-          onLogoClick={() => dispatch({ type: 'SET_VIEW', payload: 'products'})}
+          onCartClick={() => dispatch({ type: 'SET_VIEW', payload: 'cart' })}
+          onLogoClick={() => dispatch({ type: 'SET_VIEW', payload: 'products' })}
           searchTerm={state.searchTerm}
           onSearchChange={(term) => dispatch({ type: 'SET_SEARCH_TERM', payload: term })}
           genderOptions={GENDER_FILTER_OPTIONS}
@@ -474,7 +491,7 @@ const App: React.FC = () => {
               <p>Todos los derechos reservados.</p>
             </div>
             <div className="flex items-center space-x-3">
-              <WhatsAppIcon className="h-5 w-5 text-green-400"/>
+              <WhatsAppIcon className="h-5 w-5 text-green-400" />
               <a href={whatsAppUrl} target="_blank" rel="noopener noreferrer" className="hover:text-green-300 transition-colors">
                 {WHATSAPP_NUMBER}
               </a>
@@ -484,7 +501,7 @@ const App: React.FC = () => {
               className="p-2 rounded-full hover:bg-gray-700 transition-colors"
               aria-label="Acceso de Administrador" title="Acceso de Administrador"
             >
-              <SettingsIcon className="h-6 w-6 text-gray-400 hover:text-white"/>
+              <SettingsIcon className="h-6 w-6 text-gray-400 hover:text-white" />
             </button>
           </div>
         </footer>
@@ -496,7 +513,7 @@ const App: React.FC = () => {
           onUpdateQuantity={handleUpdateQuantity}
           onRemoveItem={handleRemoveFromCart}
           onPlaceOrder={handlePlaceOrder}
-          onClose={() => dispatch({ type: 'SET_VIEW', payload: 'products'})}
+          onClose={() => dispatch({ type: 'SET_VIEW', payload: 'products' })}
           isSubmittingOrder={state.isSubmittingOrder}
         />
       )}
@@ -511,6 +528,10 @@ const App: React.FC = () => {
 
       {state.showWelcomeModal && (
         <WelcomeModal onClose={() => dispatch({ type: 'SET_SHOW_WELCOME_MODAL', payload: false })} />
+      )}
+
+      {state.snackbarMessage && (
+        <Snackbar message={state.snackbarMessage} />
       )}
 
       {state.error && state.currentView !== 'cart' && state.currentView !== 'error' && !state.isSubmittingOrder && (

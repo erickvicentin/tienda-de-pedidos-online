@@ -66,6 +66,7 @@ export interface AppState {
   availableAuthors: string[];
   previewImageUrl: string | null; // Para el modal de vista previa de imagen
   showWelcomeModal: boolean; // Para el modal de bienvenida
+  snackbarMessage: string | null; // For snackbar notifications
 
   // Estados de Admin
   editingProduct: Product | null;
@@ -101,7 +102,8 @@ export type AppAction =
   | { type: 'RESET_AUTHOR_FILTER_IF_NEEDED' }
   | { type: 'SET_PREVIEW_IMAGE_URL', payload: string | null } // Para el modal de vista previa
   | { type: 'SET_SHOW_WELCOME_MODAL', payload: boolean } // Para el modal de bienvenida
-
+  | { type: 'SHOW_SNACKBAR'; payload: string } // For snackbar
+  | { type: 'HIDE_SNACKBAR' } // For snackbar
   // Acciones de Admin (Productos)
   // Estas acciones ahora actualizarán el estado local DESPUÉS de una operación exitosa en Firestore
   | { type: 'ADMIN_ADD_PRODUCT'; payload: Product } // Payload es el producto con ID de Firestore
