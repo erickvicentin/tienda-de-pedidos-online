@@ -8,7 +8,7 @@ import {
 import { auth } from './firebaseConfig'; 
 import * as productService from './services/productService'; // Importar productService
 
-import { Product, CartItem, CustomerInfo, Order, ViewState, AppState, AppAction, MockUser } from './types'; // Import MockUser
+import { Product, CartItem, CustomerInfo, Order, ViewState, AppState, AppAction } from './types'; // Import MockUser
 import { fetchProducts as fetchProductsFromOrderService, submitOrder } from './services/orderService';
 import Navbar from './components/Navbar';
 import ProductList from './components/ProductList';
@@ -41,8 +41,8 @@ const initialAppState: AppState = {
   previewImageUrl: null, // Estado inicial para la URL de la imagen de vista previa
   editingProduct: null,
   productToDelete: null,
-  currentUser: null, // Mock user
-  authLoading: false, // No initial auth loading from Firebase
+  currentUser: null,
+  authLoading: true,
   authError: null,
   isAdminOperationLoading: false,
   adminOperationError: null,
@@ -239,7 +239,6 @@ const App: React.FC = () => {
   const loadProducts = useCallback(async () => {
     dispatch({ type: 'SET_PRODUCTS_LOADING', payload: true });
     try {
-      // fetchProductsFromOrderService now internally calls the mocked productService.getProducts
       const fetchedProducts = await fetchProductsFromOrderService();
       dispatch({ type: 'SET_PRODUCTS_SUCCESS', payload: fetchedProducts });
     } catch (err) {
