@@ -1,4 +1,5 @@
 
+
 import React, { useState, useMemo, useEffect } from 'react';
 import { Product } from '../types';
 import { GLOBAL_SIZE_PRICES } from '../constants';
@@ -6,9 +7,10 @@ import { GLOBAL_SIZE_PRICES } from '../constants';
 interface ProductCardProps {
   product: Product;
   onAddToCart: (product: Product, selectedSize: number, priceForSize: number) => void;
+  onImageClick: (imageUrl: string) => void; // Nueva prop
 }
 
-const ProductCard: React.FC<ProductCardProps> = ({ product, onAddToCart }) => {
+const ProductCard: React.FC<ProductCardProps> = ({ product, onAddToCart, onImageClick }) => {
   const isFragrance = product.category === 'Fragancia';
 
   const getInitialSelectableSize = () => {
@@ -18,7 +20,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onAddToCart }) => {
     const firstAvailableSize = product.sizes.find(size => GLOBAL_SIZE_PRICES[size] !== undefined);
     return firstAvailableSize || 0;
   };
-  
+
   const [selectedSize, setSelectedSize] = useState<number>(getInitialSelectableSize());
 
   useEffect(() => {
@@ -48,7 +50,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onAddToCart }) => {
   };
 
   // For fragrances, filter sizes that have a price in GLOBAL_SIZE_PRICES
-  const availableSizesWithPricesForFragrance = isFragrance 
+  const availableSizesWithPricesForFragrance = isFragrance
     ? product.sizes.filter(size => GLOBAL_SIZE_PRICES[size] !== undefined)
     : [];
 
@@ -57,18 +59,20 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onAddToCart }) => {
 
   return (
     <div className="bg-white rounded-xl shadow-lg overflow-hidden flex flex-col transition-all duration-300 hover:shadow-2xl h-full">
-      <img 
-        className="w-full h-48 object-cover bg-gray-200"
+      <img
+        className="w-full h-48 object-cover bg-gray-200 cursor-pointer" // Added cursor-pointer
         src={product.imageUrl || 'https://via.placeholder.com/300x200.png?text=Sin+Imagen'}
-        alt={product.name} 
+        alt={product.name}
+        onClick={() => onImageClick(product.imageUrl)} // Added onClick handler
         onError={(e) => (e.currentTarget.src = 'https://via.placeholder.com/300x200.png?text=Error+Img')}
+        aria-label={`Vista previa de ${product.name}`}
       />
       <div className="p-6 flex flex-col flex-grow">
         <h3 className="text-xl font-semibold text-gray-800 mb-1">{product.name}</h3>
         <p className="text-sm text-gray-500 mb-1">Por: {product.author}</p>
         <p className="text-sm text-gray-500 mb-2">Género: {product.gender}</p>
         <p className="text-sm text-gray-600 flex-grow mb-3">{product.description}</p>
-        
+
         {showSizeSelector && (
           <div className="mb-4">
             <p className="text-sm font-medium text-gray-700 mb-1">Tamaño:</p>
@@ -78,8 +82,8 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onAddToCart }) => {
                   key={size}
                   onClick={() => setSelectedSize(size)}
                   className={`px-3 py-1 border rounded-md text-sm font-medium transition-colors
-                    ${selectedSize === size 
-                      ? 'bg-primary text-white border-primary ring-2 ring-primary ring-offset-1' 
+                    ${selectedSize === size
+                      ? 'bg-primary text-white border-primary ring-2 ring-primary ring-offset-1'
                       : 'bg-gray-100 text-gray-700 border-gray-300 hover:bg-gray-200'}`}
                 >
                   {size}ml
@@ -88,16 +92,16 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onAddToCart }) => {
             </div>
           </div>
         )}
-        
+
         {!isFragrance && product.sizes && product.sizes.length > 0 && (
-             <p className="text-sm text-gray-500 mb-2">Presentación: {product.sizes.join(', ')}{product.category === "Cosmética" || product.category === "Accesorio" ? " (ej. g/ml/unidad)" : "ml"}</p>
+          <p className="text-sm text-gray-500 mb-2">Presentación: {product.sizes.join(', ')}{product.category === "Cosmética" || product.category === "Accesorio" ? " (ej. g/ml/unidad)" : "ml"}</p>
         )}
 
         {isFragrance && availableSizesWithPricesForFragrance.length === 0 && (
-            <p className="text-sm text-red-500 mb-4">No hay tamaños con precios definidos para esta fragancia.</p>
+          <p className="text-sm text-red-500 mb-4">No hay tamaños con precios definidos para esta fragancia.</p>
         )}
-         {!isFragrance && product.manualPrice === undefined && (
-            <p className="text-sm text-red-500 mb-4">Precio no definido para este producto.</p>
+        {!isFragrance && product.manualPrice === undefined && (
+          <p className="text-sm text-red-500 mb-4">Precio no definido para este producto.</p>
         )}
 
 

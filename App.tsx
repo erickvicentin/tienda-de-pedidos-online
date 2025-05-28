@@ -8,13 +8,14 @@ import {
 import { auth } from './firebaseConfig'; 
 import * as productService from './services/productService'; // Importar productService
 
-import { Product, CartItem, CustomerInfo, Order, ViewState, AppState, AppAction } from './types';
+import { Product, CartItem, CustomerInfo, Order, ViewState, AppState, AppAction } from './types'; // Import MockUser
 import { fetchProducts as fetchProductsFromOrderService, submitOrder } from './services/orderService';
 import Navbar from './components/Navbar';
 import ProductList from './components/ProductList';
 import CartView from './components/CartView';
 import LoadingSpinner from './components/LoadingSpinner';
 import Modal from './components/Modal';
+import ImagePreviewModal from './components/ImagePreviewModal'; // Importar ImagePreviewModal
 import WhatsAppIcon from './components/icons/WhatsAppIcon';
 import SettingsIcon from './components/icons/SettingsIcon';
 import AdminView from './components/admin/AdminView';
@@ -22,11 +23,11 @@ import AdminLogin from './components/admin/AdminLogin';
 
 const GENDER_FILTER_OPTIONS: string[] = ['Todos los Géneros', 'Masculina', 'Femenina', 'Unisex'];
 const ALL_AUTHORS_OPTION = 'Todos los Autores';
-const WHATSAPP_NUMBER = "+543624965665"; 
+const WHATSAPP_NUMBER = "+543624965665";
 const WHATSAPP_MESSAGE = "Hola, estoy interesado/a en sus productos de Millanel.";
 
 const initialAppState: AppState = {
-  products: [], // Los productos se cargarán desde Firebase
+  products: [],
   cart: [],
   currentView: 'products',
   isLoadingProducts: true,
@@ -37,13 +38,14 @@ const initialAppState: AppState = {
   selectedGender: GENDER_FILTER_OPTIONS[0],
   selectedAuthor: ALL_AUTHORS_OPTION,
   availableAuthors: [ALL_AUTHORS_OPTION],
+  previewImageUrl: null, // Estado inicial para la URL de la imagen de vista previa
   editingProduct: null,
   productToDelete: null,
   currentUser: null,
   authLoading: true,
   authError: null,
-  isAdminOperationLoading: false, 
-  adminOperationError: null,    
+  isAdminOperationLoading: false,
+  adminOperationError: null,
 };
 
 function appReducer(state: AppState, action: AppAction): AppState {
@@ -53,12 +55,12 @@ function appReducer(state: AppState, action: AppAction): AppState {
     case 'SET_PRODUCTS_SUCCESS': {
       const uniqueAuthors = Array.from(new Set(action.payload.map(p => p.author))).sort();
       const availableAuthors = [ALL_AUTHORS_OPTION, ...uniqueAuthors];
-      return { 
-        ...state, 
-        products: action.payload, 
-        isLoadingProducts: false, 
+      return {
+        ...state,
+        products: action.payload,
+        isLoadingProducts: false,
         availableAuthors,
-        adminOperationError: null 
+        adminOperationError: null
       };
     }
     case 'SET_PRODUCTS_ERROR':
@@ -111,20 +113,20 @@ function appReducer(state: AppState, action: AppAction): AppState {
       return { ...state, cart: [] };
     case 'SET_VIEW': {
       const isAdminViewExiting = state.currentView.startsWith('admin_') && !action.payload.startsWith('admin_');
-      if (action.payload.startsWith('admin_') && 
-          action.payload !== 'admin_login' && 
-          !state.currentUser) {
+      if (action.payload.startsWith('admin_') &&
+        action.payload !== 'admin_login' &&
+        !state.currentUser) {
         return { ...state, currentView: 'admin_login', authError: 'Debes iniciar sesión para acceder.' };
       }
-      return { 
-        ...state, 
-        currentView: action.payload, 
-        error: state.currentView === 'cart' && action.payload !== 'cart' ? null : state.error, 
+      return {
+        ...state,
+        currentView: action.payload,
+        error: state.currentView === 'cart' && action.payload !== 'cart' ? null : state.error,
         confirmationMessage: action.payload === 'products' ? null : state.confirmationMessage,
         editingProduct: isAdminViewExiting ? null : state.editingProduct,
         productToDelete: isAdminViewExiting ? null : state.productToDelete,
-        authError: (action.payload === 'admin_login') ? null : state.authError,
-        adminOperationError: null, 
+        authError: (action.payload === 'admin_login') ? null : state.authError, // Clear auth error when navigating to login
+        adminOperationError: null,
       };
     }
     case 'SET_ORDER_SUBMITTING':
@@ -148,24 +150,37 @@ function appReducer(state: AppState, action: AppAction): AppState {
         return { ...state, selectedAuthor: ALL_AUTHORS_OPTION };
       }
       return state;
+    case 'SET_PREVIEW_IMAGE_URL':
+      return { ...state, previewImageUrl: action.payload };
 
-    case 'ADMIN_ADD_PRODUCT': 
+    case 'ADMIN_ADD_PRODUCT':
       return {
         ...state, products: [...state.products, action.payload],
         currentView: 'admin_product_list', editingProduct: null,
         isAdminOperationLoading: false, adminOperationError: null,
       };
-    case 'ADMIN_UPDATE_PRODUCT': 
+    case 'ADMIN_UPDATE_PRODUCT': {
+      // Make sure to update availableAuthors if an author name changes or a new one is added via update
+      const updatedProducts = state.products.map(p => p.id === action.payload.id ? action.payload : p);
+      const uniqueAuthors = Array.from(new Set(updatedProducts.map(p => p.author))).sort();
+      const availableAuthors = [ALL_AUTHORS_OPTION, ...uniqueAuthors];
       return {
-        ...state, products: state.products.map(p => p.id === action.payload.id ? action.payload : p),
+        ...state, products: updatedProducts,
+        availableAuthors,
         currentView: 'admin_product_list', editingProduct: null,
         isAdminOperationLoading: false, adminOperationError: null,
       };
-    case 'ADMIN_DELETE_PRODUCT': 
+    }
+    case 'ADMIN_DELETE_PRODUCT': {
+      const updatedProducts = state.products.filter(p => p.id !== action.payload);
+      const uniqueAuthors = Array.from(new Set(updatedProducts.map(p => p.author))).sort();
+      const availableAuthors = [ALL_AUTHORS_OPTION, ...uniqueAuthors];
       return {
-        ...state, products: state.products.filter(p => p.id !== action.payload),
+        ...state, products: updatedProducts,
+        availableAuthors,
         productToDelete: null, isAdminOperationLoading: false, adminOperationError: null,
       };
+    }
     case 'ADMIN_SELECT_PRODUCT_FOR_EDIT':
       return { ...state, editingProduct: action.payload, currentView: 'admin_product_form', adminOperationError: null };
     case 'ADMIN_CONFIRM_DELETE_PRODUCT':
@@ -173,9 +188,10 @@ function appReducer(state: AppState, action: AppAction): AppState {
     case 'ADMIN_CANCEL_DELETE_PRODUCT':
       return { ...state, productToDelete: null };
 
-    case 'SET_AUTH_LOADING':
+    // Mock Authentication actions
+    case 'SET_AUTH_LOADING': // Can still be used for UI purposes if needed
       return { ...state, authLoading: action.payload };
-    case 'SET_CURRENT_USER':
+    case 'SET_CURRENT_USER': // Generic action to set user, could be used by mock system
       return { ...state, currentUser: action.payload, authLoading: false, authError: null };
     case 'SET_AUTH_ERROR':
       return { ...state, authError: action.payload, authLoading: false };
@@ -188,13 +204,13 @@ function appReducer(state: AppState, action: AppAction): AppState {
     case 'FIREBASE_LOGOUT_REQUEST':
       return { ...state, authLoading: true };
     case 'FIREBASE_LOGOUT_SUCCESS':
-      return { 
-        ...state, currentUser: null, currentView: 'products', 
+      return {
+        ...state, currentUser: null, currentView: 'products',
         authLoading: false, authError: null,
         editingProduct: null, productToDelete: null,
-        isAdminOperationLoading: false, adminOperationError: null, 
+        isAdminOperationLoading: false, adminOperationError: null,
       };
-    
+
     case 'SET_ADMIN_OPERATION_LOADING':
       return { ...state, isAdminOperationLoading: action.payload, adminOperationError: action.payload ? null : state.adminOperationError };
     case 'SET_ADMIN_OPERATION_ERROR':
@@ -223,7 +239,7 @@ const App: React.FC = () => {
   const loadProducts = useCallback(async () => {
     dispatch({ type: 'SET_PRODUCTS_LOADING', payload: true });
     try {
-      const fetchedProducts = await fetchProductsFromOrderService(); 
+      const fetchedProducts = await fetchProductsFromOrderService();
       dispatch({ type: 'SET_PRODUCTS_SUCCESS', payload: fetchedProducts });
     } catch (err) {
       console.error("Error al cargar productos:", err);
@@ -269,6 +285,14 @@ const App: React.FC = () => {
     dispatch({ type: 'UPDATE_CART_QUANTITY', payload: { productId, selectedSize, quantity } });
   };
 
+  const handleOpenImagePreview = (imageUrl: string) => {
+    dispatch({ type: 'SET_PREVIEW_IMAGE_URL', payload: imageUrl });
+  };
+
+  const handleCloseImagePreview = () => {
+    dispatch({ type: 'SET_PREVIEW_IMAGE_URL', payload: null });
+  };
+
   const handlePlaceOrder = async (customerInfo: CustomerInfo) => {
     dispatch({ type: 'SET_ORDER_SUBMITTING', payload: true });
     const order: Order = {
@@ -280,21 +304,21 @@ const App: React.FC = () => {
       const result = await submitOrder(order);
       if (result.success) {
         const successMessage = `Tu pedido ha sido registrado con éxito.\nID de Pedido: ${result.orderId || 'N/A'}\n\nNos pondremos en contacto contigo a la brevedad para coordinar la entrega.`;
-        dispatch({ 
-          type: 'SET_ORDER_SUCCESS', 
+        dispatch({
+          type: 'SET_ORDER_SUCCESS',
           payload: { title: '¡Pedido Confirmado!', message: successMessage, orderId: result.orderId }
         });
       } else {
         let detailedErrorMessage = result.message || 'Ocurrió un error al realizar el pedido.';
-        if (result.scriptErrorDetails) { 
-            detailedErrorMessage += `\nDetalles del error del script: Nombre: ${result.scriptErrorDetails.name || 'N/A'}, Mensaje: ${result.scriptErrorDetails.message || 'N/A'}`;
+        if (result.scriptErrorDetails) {
+          detailedErrorMessage += `\nDetalles del error del script: Nombre: ${result.scriptErrorDetails.name || 'N/A'}, Mensaje: ${result.scriptErrorDetails.message || 'N/A'}`;
         }
         dispatch({ type: 'SET_ORDER_ERROR', payload: detailedErrorMessage });
       }
-    } catch (err) { 
-        const error = err as Error;
-        dispatch({ type: 'SET_ORDER_ERROR', payload: error.message || 'Error de conexión al realizar el pedido.' });
-    } 
+    } catch (err) {
+      const error = err as Error;
+      dispatch({ type: 'SET_ORDER_ERROR', payload: error.message || 'Error de conexión al realizar el pedido.' });
+    }
     finally {
       dispatch({ type: 'SET_ORDER_SUBMITTING', payload: false });
     }
@@ -309,7 +333,7 @@ const App: React.FC = () => {
       dispatch({ type: 'SET_VIEW', payload: 'admin_login' });
     }
   };
-  
+
   const whatsAppUrl = `https://wa.me/${WHATSAPP_NUMBER.replace(/\D/g, '')}?text=${encodeURIComponent(WHATSAPP_MESSAGE)}`;
 
   const handleLogout = async () => {
@@ -328,17 +352,17 @@ const App: React.FC = () => {
     dispatch({ type: 'SET_ADMIN_OPERATION_LOADING', payload: true });
     dispatch({ type: 'CLEAR_ADMIN_OPERATION_ERROR' });
     try {
-        if ('id' in productData && productData.id) { 
+      if ('id' in productData && productData.id) {
             await productService.updateProduct(productData.id, productData as Product);
-            dispatch({ type: 'ADMIN_UPDATE_PRODUCT', payload: productData as Product });
-        } else { 
+        dispatch({ type: 'ADMIN_UPDATE_PRODUCT', payload: productData as Product });
+      } else {
             const newProductWithId = await productService.addProduct(productData as Omit<Product, 'id'>);
-            dispatch({ type: 'ADMIN_ADD_PRODUCT', payload: newProductWithId });
-        }
+        dispatch({ type: 'ADMIN_ADD_PRODUCT', payload: newProductWithId });
+      }
     } catch (error) {
         console.error("Error guardando producto:", error);
-        const message = error instanceof Error ? error.message : 'No se pudo guardar el producto.';
-        dispatch({ type: 'SET_ADMIN_OPERATION_ERROR', payload: message });
+      const message = error instanceof Error ? error.message : 'No se pudo guardar el producto.';
+      dispatch({ type: 'SET_ADMIN_OPERATION_ERROR', payload: message });
     }
   };
 
@@ -347,13 +371,13 @@ const App: React.FC = () => {
     dispatch({ type: 'CLEAR_ADMIN_OPERATION_ERROR' });
     try {
         await productService.deleteProduct(productId);
-        dispatch({ type: 'ADMIN_DELETE_PRODUCT', payload: productId });
+      dispatch({ type: 'ADMIN_DELETE_PRODUCT', payload: productId });
     } catch (error) {
         console.error("Error eliminando producto:", error);
-        const message = error instanceof Error ? error.message : 'No se pudo eliminar el producto.';
-        dispatch({ type: 'SET_ADMIN_OPERATION_ERROR', payload: message });
+      const message = error instanceof Error ? error.message : 'No se pudo eliminar el producto.';
+      dispatch({ type: 'SET_ADMIN_OPERATION_ERROR', payload: message });
     } finally {
-        dispatch({ type: 'ADMIN_CANCEL_DELETE_PRODUCT' }); 
+      dispatch({ type: 'ADMIN_CANCEL_DELETE_PRODUCT' });
     }
   };
 
@@ -374,35 +398,35 @@ const App: React.FC = () => {
       return (
         <AdminView
           currentView={state.currentView}
-          products={state.products} 
+          products={state.products}
           editingProduct={state.editingProduct}
           dispatch={dispatch}
           onLogout={handleLogout}
-          onSaveProduct={handleSaveProductInAdmin} 
-          isLoading={state.isAdminOperationLoading} 
-          error={state.adminOperationError} 
+          onSaveProduct={handleSaveProductInAdmin}
+          isLoading={state.isAdminOperationLoading}
+          error={state.adminOperationError}
         />
       );
     }
-    
+
     if (state.isLoadingProducts && state.products.length === 0 && state.currentView !== 'error') {
       return <LoadingSpinner />;
     }
-    
+
     switch (state.currentView) {
       case 'products':
-      case 'error': 
-        return <ProductList products={filteredProducts} onAddToCart={handleAddToCart} />;
-      default: 
-        return <ProductList products={filteredProducts} onAddToCart={handleAddToCart} />;
+      case 'error':
+        return <ProductList products={filteredProducts} onAddToCart={handleAddToCart} onImageClick={handleOpenImagePreview} />;
+      default:
+        return <ProductList products={filteredProducts} onAddToCart={handleAddToCart} onImageClick={handleOpenImagePreview} />;
     }
   };
 
   return (
     <div className="min-h-screen flex flex-col bg-neutral">
       {!state.currentView.startsWith('admin_') && (
-        <Navbar 
-          cartItemCount={cartItemCount} 
+        <Navbar
+          cartItemCount={cartItemCount}
           onCartClick={() => dispatch({ type: 'SET_VIEW', payload: 'cart'})}
           onLogoClick={() => dispatch({ type: 'SET_VIEW', payload: 'products'})}
           searchTerm={state.searchTerm}
@@ -418,7 +442,7 @@ const App: React.FC = () => {
       <main className="flex-grow">
         {renderContent()}
       </main>
-      
+
       {!state.currentView.startsWith('admin_') && (
         <footer className="bg-gray-800 text-gray-300 p-6">
           <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
@@ -453,39 +477,43 @@ const App: React.FC = () => {
           isSubmittingOrder={state.isSubmittingOrder}
         />
       )}
-      
+
       {state.currentView === 'confirmation' && state.confirmationMessage && (
-        <Modal title={state.confirmationMessage.title} message={state.confirmationMessage.message} type="success" onClose={() => dispatch({ type: 'CLEAR_CONFIRMATION' })}/>
+        <Modal title={state.confirmationMessage.title} message={state.confirmationMessage.message} type="success" onClose={() => dispatch({ type: 'CLEAR_CONFIRMATION' })} />
       )}
 
-      {state.error && state.currentView !== 'cart' && state.currentView !== 'error' && !state.isSubmittingOrder && ( 
-         <Modal title="Error" message={state.error} type="error" onClose={() => {
-            dispatch({ type: 'CLEAR_ERROR' });
+      {state.previewImageUrl && (
+        <ImagePreviewModal imageUrl={state.previewImageUrl} onClose={handleCloseImagePreview} />
+      )}
+
+      {state.error && state.currentView !== 'cart' && state.currentView !== 'error' && !state.isSubmittingOrder && (
+        <Modal title="Error" message={state.error} type="error" onClose={() => {
+          dispatch({ type: 'CLEAR_ERROR' });
             if (state.currentView !== 'products' && state.currentView !== 'confirmation') {
                  dispatch({type: 'SET_VIEW', payload: 'products'});
-            }
-          }} />
+          }
+        }} />
       )}
       {state.error && state.currentView === 'error' && !state.isLoadingProducts && state.products.length === 0 && !state.isSubmittingOrder && (
          <Modal title="Error de Carga" message={state.error} type="error" onClose={() => {
             dispatch({ type: 'CLEAR_ERROR' });
-            loadProducts(); 
+            loadProducts();
           }} />
       )}
-       {state.error && state.currentView === 'cart' && !state.isSubmittingOrder && (
-         <Modal title="Error en el Pedido" message={state.error} type="error" onClose={() => dispatch({ type: 'CLEAR_ERROR' })} />
+      {state.error && state.currentView === 'cart' && !state.isSubmittingOrder && (
+        <Modal title="Error en el Pedido" message={state.error} type="error" onClose={() => dispatch({ type: 'CLEAR_ERROR' })} />
       )}
-      
+
       {state.adminOperationError && state.currentView.startsWith('admin_') && (
         <Modal
-            title="Error de Administración"
-            message={state.adminOperationError}
-            type="error"
-            onClose={() => dispatch({ type: 'CLEAR_ADMIN_OPERATION_ERROR' })}
+          title="Error de Administración"
+          message={state.adminOperationError}
+          type="error"
+          onClose={() => dispatch({ type: 'CLEAR_ADMIN_OPERATION_ERROR' })}
         />
       )}
 
-       {state.productToDelete && state.currentView.startsWith('admin_') && state.currentUser && (
+      {state.productToDelete && state.currentView.startsWith('admin_') && state.currentUser && (
         <Modal
           title="Confirmar Eliminación"
           message={`¿Estás seguro de que deseas eliminar el producto "${state.productToDelete.name}"? Esta acción no se puede deshacer.`}
@@ -493,7 +521,7 @@ const App: React.FC = () => {
           onClose={() => dispatch({ type: 'ADMIN_CANCEL_DELETE_PRODUCT' })}
           onConfirm={() => {
             if (state.productToDelete) {
-              handleDeleteProductInAdmin(state.productToDelete.id); 
+              handleDeleteProductInAdmin(state.productToDelete.id);
             }
           }}
           confirmText="Eliminar"
