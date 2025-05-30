@@ -1,4 +1,5 @@
 
+
 import { Product, Gender, ProductCategory } from './types';
 
 export const GLOBAL_SIZE_PRICES: { [size: number]: number } = {
@@ -20,7 +21,8 @@ export const MOCK_PRODUCTS: Product[] = [
     "category": "Fragancia",
     "gender": "Femenina",
     "author": "Millanel",
-    "sizes": [30, 60, 100]
+    "sizes": [30, 60, 100],
+    "isVisible": true
   },
   {
     "id": "2",
@@ -30,7 +32,8 @@ export const MOCK_PRODUCTS: Product[] = [
     "category": "Fragancia",
     "gender": "Masculina",
     "author": "Millanel",
-    "sizes": [30, 60, 100]
+    "sizes": [30, 60, 100],
+    "isVisible": true
   },
   {
     "id": "3",
@@ -40,7 +43,8 @@ export const MOCK_PRODUCTS: Product[] = [
     "category": "Fragancia",
     "gender": "Femenina",
     "author": "Millanel",
-    "sizes": [60, 100]
+    "sizes": [60, 100],
+    "isVisible": true
   },
   {
     "id": "4",
@@ -50,7 +54,8 @@ export const MOCK_PRODUCTS: Product[] = [
     "category": "Fragancia",
     "gender": "Femenina",
     "author": "Millanel",
-    "sizes": [30, 60]
+    "sizes": [30, 60],
+    "isVisible": true
   },
   {
     "id": "5",
@@ -60,7 +65,8 @@ export const MOCK_PRODUCTS: Product[] = [
     "category": "Fragancia",
     "gender": "Masculina",
     "author": "Millanel",
-    "sizes": [60, 100]
+    "sizes": [60, 100],
+    "isVisible": true
   },
   {
     "id": "6",
@@ -70,10 +76,11 @@ export const MOCK_PRODUCTS: Product[] = [
     "category": "Cosmética",
     "gender": "Femenina",
     "author": "Millanel Cosmética",
-    "sizes": [], // e.g. [4] if it's 4g, or [] if size is not relevant for selection
-    "manualPrice": 5000.00 
+    "sizes": [],
+    "manualPrice": 5000.00,
+    "isVisible": true
   },
-   {
+  {
     "id": "7",
     "name": "Delineador Líquido Negro Intenso",
     "description": "Delineador líquido de alta precisión para una mirada impactante. A prueba de agua.",
@@ -81,8 +88,9 @@ export const MOCK_PRODUCTS: Product[] = [
     "category": "Cosmética",
     "gender": "Unisex",
     "author": "Millanel Cosmética",
-    "sizes": [], // e.g. [5] if it's 5ml
-    "manualPrice": 3500.00
+    "sizes": [],
+    "manualPrice": 3500.00,
+    "isVisible": true
   },
   {
     "id": "8",
@@ -92,7 +100,8 @@ export const MOCK_PRODUCTS: Product[] = [
     "category": "Cosmética",
     "gender": "Unisex",
     "author": "Millanel Cuidado Personal",
-    "sizes": [50], // Represents 50g or 50ml
-    "manualPrice": 7000.00
+    "sizes": [50],
+    "manualPrice": 7000.00,
+    "isVisible": true
   }
 ];

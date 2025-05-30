@@ -14,6 +14,7 @@ export interface Product {
   author: string;
   sizes: number[];
   manualPrice?: number; // Added for manual pricing
+  isVisible?: boolean; // Nuevo campo para la visibilidad del producto
 }
 
 export interface CartItem extends Product {
@@ -94,7 +95,7 @@ export type AppAction =
   | { type: 'SET_ORDER_SUBMITTING'; payload: boolean }
   | { type: 'SET_ORDER_SUCCESS'; payload: { title: string; message: string; orderId?: string } }
   | { type: 'SET_ORDER_ERROR'; payload: string }
-  | { type: 'CLEAR_ERROR' } // Limpia error general de la app 
+  | { type: 'CLEAR_ERROR' }
   | { type: 'CLEAR_CONFIRMATION' }
   | { type: 'SET_SEARCH_TERM'; payload: string }
   | { type: 'SET_SELECTED_GENDER'; payload: string }
@@ -112,6 +113,7 @@ export type AppAction =
   | { type: 'ADMIN_SELECT_PRODUCT_FOR_EDIT'; payload: Product | null }
   | { type: 'ADMIN_CONFIRM_DELETE_PRODUCT'; payload: Product | null }
   | { type: 'ADMIN_CANCEL_DELETE_PRODUCT' }
+  | { type: 'ADMIN_TOGGLE_PRODUCT_VISIBILITY'; payload: { productId: string; isVisible: boolean } }
 
   // Acciones de Autenticación de Firebase
   | { type: 'SET_AUTH_LOADING'; payload: boolean }
