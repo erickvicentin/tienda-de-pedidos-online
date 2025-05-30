@@ -1,5 +1,6 @@
 
 
+
 import React, { useState, useMemo } from 'react'; // Añadir useState y useMemo
 import { AppState, AppAction, Product, ViewState } from '../../types';
 import AdminProductList from './AdminProductList';
@@ -13,6 +14,7 @@ interface AdminViewProps {
   dispatch: React.Dispatch<AppAction>;
   onLogout: () => void;
   onSaveProduct: (productData: Product | Omit<Product, 'id'>) => Promise<void>;
+  onToggleProductVisibility: (productId: string, currentVisibility: boolean) => Promise<void>; // Nueva prop
   isLoading: boolean;
   error: string | null;
 }
@@ -24,6 +26,7 @@ const AdminView: React.FC<AdminViewProps> = ({
   dispatch,
   onLogout,
   onSaveProduct,
+  onToggleProductVisibility, // Destructurar nueva prop
   isLoading,
   error
 }) => {
@@ -85,9 +88,10 @@ const AdminView: React.FC<AdminViewProps> = ({
             </button>
           </div>
           <AdminProductList
-            products={filteredAdminProducts} // Usar productos filtrados
+            products={filteredAdminProducts}
             onEditProduct={(product) => dispatch({ type: 'ADMIN_SELECT_PRODUCT_FOR_EDIT', payload: product })}
             onDeleteProduct={(product) => dispatch({ type: 'ADMIN_CONFIRM_DELETE_PRODUCT', payload: product })}
+            onToggleVisibility={onToggleProductVisibility} // Pasar la prop
             disabled={isLoading}
           />
         </>

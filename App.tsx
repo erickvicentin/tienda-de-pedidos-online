@@ -1,5 +1,6 @@
 
 
+
 import React, { useEffect, useCallback, useMemo, useReducer } from 'react';
 import { 
   onAuthStateChanged, 
@@ -131,7 +132,7 @@ function appReducer(state: AppState, action: AppAction): AppState {
         confirmationMessage: action.payload === 'products' ? null : state.confirmationMessage,
         editingProduct: isAdminViewExiting ? null : state.editingProduct,
         productToDelete: isAdminViewExiting ? null : state.productToDelete,
-        authError: (action.payload === 'admin_login') ? null : state.authError, // Clear auth error when navigating to login
+        authError: (action.payload === 'admin_login') ? null : state.authError,
         adminOperationError: null,
       };
     }
@@ -172,7 +173,6 @@ function appReducer(state: AppState, action: AppAction): AppState {
         isAdminOperationLoading: false, adminOperationError: null,
       };
     case 'ADMIN_UPDATE_PRODUCT': {
-      // Make sure to update availableAuthors if an author name changes or a new one is added via update
       const updatedProducts = state.products.map(p => p.id === action.payload.id ? action.payload : p);
       const uniqueAuthors = Array.from(new Set(updatedProducts.map(p => p.author))).sort();
       const availableAuthors = [ALL_AUTHORS_OPTION, ...uniqueAuthors];
@@ -199,9 +199,20 @@ function appReducer(state: AppState, action: AppAction): AppState {
       return { ...state, productToDelete: action.payload };
     case 'ADMIN_CANCEL_DELETE_PRODUCT':
       return { ...state, productToDelete: null };
+    case 'ADMIN_TOGGLE_PRODUCT_VISIBILITY': {
+      const { productId, isVisible } = action.payload;
+      const updatedProducts = state.products.map(p =>
+        p.id === productId ? { ...p, isVisible } : p
+      );
+      return {
+        ...state,
+        products: updatedProducts,
+        isAdminOperationLoading: false, // Se asume que esto se maneja en el handler
+        adminOperationError: null,
+      };
+    }
 
-    // Mock Authentication actions
-    case 'SET_AUTH_LOADING': // Can still be used for UI purposes if needed
+    case 'SET_AUTH_LOADING':
       return { ...state, authLoading: action.payload };
     case 'SET_CURRENT_USER': // Generic action to set user, could be used by mock system
       return { ...state, currentUser: action.payload, authLoading: false, authError: null };
@@ -269,7 +280,7 @@ const App: React.FC = () => {
     if (state.snackbarMessage) {
       const timer = setTimeout(() => {
         dispatch({ type: 'HIDE_SNACKBAR' });
-      }, 5000);
+      }, 3000); // Snackbar duration
       return () => clearTimeout(timer);
     }
   }, [state.snackbarMessage]);
@@ -295,7 +306,8 @@ const App: React.FC = () => {
   }, [state.availableAuthors]);
 
   const filteredProducts = useMemo(() => {
-    let currentProducts = state.products;
+    let currentProducts = state.products.filter(product => product.isVisible !== false); // Filtrar por visibilidad
+
     if (state.searchTerm.trim() !== '') {
       currentProducts = currentProducts.filter(product =>
         product.name.toLowerCase().includes(state.searchTerm.toLowerCase()) ||
@@ -411,7 +423,7 @@ const App: React.FC = () => {
     try {
       await productService.deleteProduct(productId);
       dispatch({ type: 'ADMIN_DELETE_PRODUCT', payload: productId });
-      dispatch({ type: 'SHOW_SNACKBAR', payload: '¡Producto eliminado exitosamente!' }); // Snackbar for delete
+      dispatch({ type: 'SHOW_SNACKBAR', payload: '¡Producto eliminado exitosamente!' });
     } catch (error) {
         console.error("Error eliminando producto:", error);
       const message = error instanceof Error ? error.message : 'No se pudo eliminar el producto.';
@@ -420,6 +432,25 @@ const App: React.FC = () => {
       dispatch({ type: 'ADMIN_CANCEL_DELETE_PRODUCT' });
     }
   };
+
+  const handleToggleProductVisibilityInAdmin = async (productId: string, currentVisibility: boolean) => {
+    dispatch({ type: 'SET_ADMIN_OPERATION_LOADING', payload: true });
+    dispatch({ type: 'CLEAR_ADMIN_OPERATION_ERROR' });
+    const newVisibility = !currentVisibility;
+    try {
+      await productService.updateProduct(productId, { isVisible: newVisibility });
+      dispatch({ type: 'ADMIN_TOGGLE_PRODUCT_VISIBILITY', payload: { productId, isVisible: newVisibility } });
+      dispatch({ type: 'SHOW_SNACKBAR', payload: `Visibilidad del producto ${newVisibility ? 'activada' : 'desactivada'}.` });
+    } catch (error) {
+      console.error("Error cambiando visibilidad del producto (mock):", error);
+      const message = error instanceof Error ? error.message : 'No se pudo cambiar la visibilidad.';
+      dispatch({ type: 'SET_ADMIN_OPERATION_ERROR', payload: message });
+      // Revert visual state on error if desired, or let AdminProductList handle its disabled state
+    } finally {
+      dispatch({ type: 'SET_ADMIN_OPERATION_LOADING', payload: false });
+    }
+  };
+
 
   const renderContent = () => {
     if (state.authLoading && !state.currentUser && (state.currentView === 'admin_login' || state.currentView.startsWith('admin_'))) {
@@ -443,6 +474,7 @@ const App: React.FC = () => {
           dispatch={dispatch}
           onLogout={handleLogout}
           onSaveProduct={handleSaveProductInAdmin}
+          onToggleProductVisibility={handleToggleProductVisibilityInAdmin} // Pasar el nuevo manejador
           isLoading={state.isAdminOperationLoading}
           error={state.adminOperationError}
         />
@@ -573,7 +605,7 @@ const App: React.FC = () => {
       {state.productToDelete && state.currentView.startsWith('admin_') && state.currentUser && (
         <Modal
           title="Confirmar Eliminación"
-          message={`¿Estás seguro de que deseas eliminar el producto "${state.productToDelete.name}"? Esta acción no se puede deshacer.`}
+          message={`¿Estás seguro de que deseas eliminar el producto "${state.productToDelete.name}"? Esta acción no se puede deshacer (en esta sesión).`}
           type="warning"
           onClose={() => dispatch({ type: 'ADMIN_CANCEL_DELETE_PRODUCT' })}
           onConfirm={() => {

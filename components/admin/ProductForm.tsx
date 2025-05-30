@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect, FormEvent } from 'react';
 import { Product, AppAction, Gender, ProductCategory } from '../../types';
 import { AVAILABLE_PRODUCT_CATEGORIES } from '../../constants';
@@ -21,6 +22,20 @@ interface ProductFormState {
   author: string;
   sizes: number[];
   manualPrice: string;
+  isVisible: boolean; // Nuevo campo
+}
+
+// Define a dedicated type for form errors
+interface ProductFormErrors {
+  name?: string;
+  description?: string;
+  imageUrl?: string;
+  category?: string;
+  gender?: string;
+  author?: string;
+  sizes?: string;
+  manualPrice?: string;
+  // No se necesita error para isVisible, ya que es un booleano
 }
 
 const newProductInitialState: ProductFormState = {
@@ -31,8 +46,9 @@ const newProductInitialState: ProductFormState = {
   category: 'Fragancia',
   gender: 'Unisex',
   author: '',
-  sizes: [], // Initialize with empty array, buttons will populate for fragrances
+  sizes: [],
   manualPrice: '',
+  isVisible: true, // Por defecto visible
 };
 
 const STANDARD_FRAGRANCE_SIZES = [30, 60, 100];
@@ -43,25 +59,26 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel, is
       {
         ...product,
         id: product.id,
-        manualPrice: product.manualPrice !== undefined ? String(product.manualPrice) : ''
+        manualPrice: product.manualPrice !== undefined ? String(product.manualPrice) : '',
+        isVisible: product.isVisible !== undefined ? product.isVisible : true, // Manejar visibilidad
       } :
       newProductInitialState
   );
 
-  const [sizesInput, setSizesInput] = useState(product?.sizes.join(', ') || ''); // For non-fragrance categories
-  const [formErrors, setFormErrors] = useState<Partial<Omit<ProductFormState, 'id' | 'manualPrice'>> & { sizes?: string, manualPrice?: string }>({});
+  const [sizesInput, setSizesInput] = useState(product?.sizes.join(', ') || '');
+  const [formErrors, setFormErrors] = useState<ProductFormErrors>({});
 
   useEffect(() => {
     if (product) {
       setFormData({
-        ...product, // product.sizes will correctly populate formData.sizes
+        ...product,
         manualPrice: product.manualPrice !== undefined ? String(product.manualPrice) : '',
+        isVisible: product.isVisible !== undefined ? product.isVisible : true, // Manejar visibilidad
       });
-      // Only set sizesInput if not a fragrance or if product.sizes exist (for backward compatibility if needed)
       if (product.category !== 'Fragancia') {
         setSizesInput(product.sizes.join(', '));
       } else {
-        setSizesInput(''); // Clear text input for fragrances
+        setSizesInput('');
       }
     } else {
       setFormData(newProductInitialState);
@@ -71,10 +88,16 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel, is
   }, [product]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value as any }));
-    if (formErrors[name as keyof typeof formErrors]) {
-      setFormErrors(prev => ({ ...prev, [name]: undefined }));
+    const { name, value, type } = e.target;
+    const checked = (e.target as HTMLInputElement).checked;
+
+    setFormData(prev => ({
+      ...prev,
+      [name]: type === 'checkbox' ? checked : value as any
+    }));
+
+    if (formErrors[name as keyof ProductFormErrors]) {
+      setFormErrors(prev => ({ ...prev, [name as keyof ProductFormErrors]: undefined }));
     }
     if (name === 'category') {
       setFormErrors(prev => ({ ...prev, manualPrice: undefined, sizes: undefined }));
@@ -106,7 +129,7 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel, is
   };
 
   const validateForm = (): boolean => {
-    const errors: Partial<Omit<ProductFormState, 'id' | 'manualPrice'>> & { sizes?: string, manualPrice?: string } = {};
+    const errors: ProductFormErrors = {};
     if (!formData.name.trim()) errors.name = "El nombre es obligatorio.";
     if (!formData.author.trim()) errors.author = "El autor es obligatorio.";
     if (!formData.description.trim()) errors.description = "La descripción es obligatoria.";
@@ -167,7 +190,8 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel, is
       category: formData.category,
       gender: formData.gender,
       author: formData.author,
-      sizes: finalSizes, // finalSizes is number[]
+      sizes: finalSizes,
+      isVisible: formData.isVisible, // Añadir visibilidad
       ...(manualPriceNum !== undefined && { manualPrice: manualPriceNum }),
     };
 
@@ -294,10 +318,28 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel, is
           />
           {formErrors.sizes && <p className={errorClass}>{formErrors.sizes}</p>}
           <p className="text-xs text-gray-500 mt-1">
-            Para productos que no son fragancias: ingrese tamaños/pesos informativos (ej: 50 para 50g/ml, 1 para unidad) o deje vacío si no aplica. El precio se define manualmente.
+            Para productos que no son fragancias: ingrese tamaños/pesos informativos (ej: 50 para 50g/ml, 1 para unidad) o deje vacío si no aplica. El precio se define manually.
           </p>
         </div>
       )}
+
+      {/* Control de Visibilidad */}
+      <div className="flex items-center space-x-3 py-2 border-t border-b border-gray-200">
+        <input
+          type="checkbox"
+          name="isVisible"
+          id="isVisible"
+          checked={formData.isVisible}
+          onChange={handleChange}
+          className="h-4 w-4 text-primary border-gray-300 rounded focus:ring-primary"
+        />
+        <label htmlFor="isVisible" className="text-sm font-medium text-gray-700">
+          Visible en la tienda
+        </label>
+        <p className="text-xs text-gray-500">
+          (Desmarcar para ocultar el producto de la vista del cliente)
+        </p>
+      </div>
 
 
       <div className="flex justify-end space-x-3 pt-4">
