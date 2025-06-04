@@ -2,12 +2,12 @@
 
 
 import React, { useEffect, useCallback, useMemo, useReducer } from 'react';
-import { 
-  onAuthStateChanged, 
-  User as FirebaseUser, 
+import {
+  onAuthStateChanged,
+  User as FirebaseUser,
   signOut as firebaseSignOut
 } from 'firebase/auth';
-import { auth } from './firebaseConfig'; 
+import { auth } from './firebaseConfig';
 import * as productService from './services/productService'; // Importar productService
 
 import { Product, CartItem, CustomerInfo, Order, ViewState, AppState, AppAction } from './types'; // Import MockUser
@@ -250,11 +250,11 @@ const App: React.FC = () => {
 
   useEffect(() => {
     dispatch({ type: 'SET_AUTH_LOADING', payload: true });
-      const unsubscribe = onAuthStateChanged(auth, (user) => {
-        dispatch({ type: 'SET_CURRENT_USER', payload: user as FirebaseUser | null });
-       if (!user && state.currentView.startsWith('admin_') && state.currentView !== 'admin_login') {
-         dispatch({ type: 'SET_VIEW', payload: 'admin_login' });
-       }
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      dispatch({ type: 'SET_CURRENT_USER', payload: user as FirebaseUser | null });
+      if (!user && state.currentView.startsWith('admin_') && state.currentView !== 'admin_login') {
+        dispatch({ type: 'SET_VIEW', payload: 'admin_login' });
+      }
     });
     return () => unsubscribe();
   }, []);
@@ -306,7 +306,7 @@ const App: React.FC = () => {
   }, [state.availableAuthors]);
 
   const filteredProducts = useMemo(() => {
-    let currentProducts = state.products.filter(product => product.isVisible !== false); // Filtrar por visibilidad
+    let currentProducts = state.products.filter(product => product.isVisible === true); // Filtrar estrictamente: solo mostrar si isVisible es true
 
     if (state.searchTerm.trim() !== '') {
       currentProducts = currentProducts.filter(product =>
@@ -393,8 +393,8 @@ const App: React.FC = () => {
       dispatch({ type: 'FIREBASE_LOGOUT_SUCCESS' });
     } catch (error) {
       console.error("Error al cerrar sesión:", error);
-      dispatch({ type: 'FIREBASE_LOGOUT_SUCCESS' }); 
-      dispatch({ type: 'SET_AUTH_ERROR', payload: 'Error al cerrar sesión. Intenta de nuevo.'});
+      dispatch({ type: 'FIREBASE_LOGOUT_SUCCESS' });
+      dispatch({ type: 'SET_AUTH_ERROR', payload: 'Error al cerrar sesión. Intenta de nuevo.' });
     }
   };
 
@@ -411,7 +411,7 @@ const App: React.FC = () => {
       }
       dispatch({ type: 'SHOW_SNACKBAR', payload: '¡Producto guardado exitosamente!' });
     } catch (error) {
-        console.error("Error guardando producto:", error);
+      console.error("Error guardando producto:", error);
       const message = error instanceof Error ? error.message : 'No se pudo guardar el producto.';
       dispatch({ type: 'SET_ADMIN_OPERATION_ERROR', payload: message });
     }
@@ -425,7 +425,7 @@ const App: React.FC = () => {
       dispatch({ type: 'ADMIN_DELETE_PRODUCT', payload: productId });
       dispatch({ type: 'SHOW_SNACKBAR', payload: '¡Producto eliminado exitosamente!' });
     } catch (error) {
-        console.error("Error eliminando producto:", error);
+      console.error("Error eliminando producto:", error);
       const message = error instanceof Error ? error.message : 'No se pudo eliminar el producto.';
       dispatch({ type: 'SET_ADMIN_OPERATION_ERROR', payload: message });
     } finally {
