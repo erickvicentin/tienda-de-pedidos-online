@@ -1,11 +1,11 @@
 
 import { db } from '../firebaseConfig';
-import { 
-  collection, 
-  getDocs, 
-  addDoc, 
-  doc, 
-  updateDoc, 
+import {
+  collection,
+  getDocs,
+  addDoc,
+  doc,
+  updateDoc,
   deleteDoc,
   DocumentData,
   QueryDocumentSnapshot
@@ -16,36 +16,36 @@ const productsCollectionRef = collection(db, 'products');
 
 // Helper para convertir Firestore doc a Product
 const mapDocToProduct = (docSnap: QueryDocumentSnapshot<DocumentData>): Product => {
-    const data = docSnap.data();
-    const manualPriceRaw = data.manualPrice;
-    let manualPriceValue: number | undefined = undefined;
+  const data = docSnap.data();
+  const manualPriceRaw = data.manualPrice;
+  let manualPriceValue: number | undefined = undefined;
 
-    if (manualPriceRaw !== undefined) {
-        const parsed = Number(manualPriceRaw); // Intenta convertir a número (maneja strings y números)
-        if (!isNaN(parsed)) { // Verifica si la conversión fue exitosa
-            manualPriceValue = parsed;
-        } else {
-            console.warn(`Producto ID ${docSnap.id}: El campo manualPrice ("${manualPriceRaw}") no es un número válido. Se establecerá como indefinido.`);
-        }
+  if (manualPriceRaw !== undefined) {
+    const parsed = Number(manualPriceRaw); // Intenta convertir a número (maneja strings y números)
+    if (!isNaN(parsed)) { // Verifica si la conversión fue exitosa
+      manualPriceValue = parsed;
+    } else {
+      console.warn(`Producto ID ${docSnap.id}: El campo manualPrice ("${manualPriceRaw}") no es un número válido. Se establecerá como indefinido.`);
     }
-    return {
-        id: docSnap.id,
-        name: data.name || '',
-        description: data.description || '',
-        imageUrl: data.imageUrl || '',
-        category: (data.category as ProductCategory) || 'Otra',
-        gender: (data.gender as Gender) || 'Unisex',
-        author: data.author || '',
-        sizes: Array.isArray(data.sizes) ? data.sizes.filter(s => typeof s === 'number') : [],
-        manualPrice: manualPriceValue,
-    };
+  }
+  return {
+    id: docSnap.id,
+    name: data.name || '',
+    description: data.description || '',
+    imageUrl: data.imageUrl || '',
+    category: (data.category as ProductCategory) || 'Otra',
+    gender: (data.gender as Gender) || 'Unisex',
+    author: data.author || '',
+    sizes: Array.isArray(data.sizes) ? data.sizes.filter(s => typeof s === 'number') : [],
+    manualPrice: manualPriceValue,
+    isVisible: data.isVisible,
+  };
 };
 
 
 export const getProducts = async (): Promise<Product[]> => {
   try {
     const data = await getDocs(productsCollectionRef);
-    console.log(data.docs)
     return data.docs.map(mapDocToProduct);
   } catch (error) {
     console.error("Error fetching products from Firestore:", error);
