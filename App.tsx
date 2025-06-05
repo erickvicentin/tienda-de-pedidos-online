@@ -165,6 +165,8 @@ function appReducer(state: AppState, action: AppAction): AppState {
       return { ...state, snackbarMessage: action.payload };
     case 'HIDE_SNACKBAR':
       return { ...state, snackbarMessage: null };
+    case 'SHOW_WELCOME_MODAL_EXPLICIT': // Nueva acción para mostrar el modal explícitamente
+      return { ...state, showWelcomeModal: true };
 
     case 'ADMIN_ADD_PRODUCT':
       return {
@@ -263,8 +265,7 @@ const App: React.FC = () => {
     // Check for first visit to show welcome modal
     try {
       const hasVisited = localStorage.getItem(LOCAL_STORAGE_VISITED_KEY);
-      if (!hasVisited) {
-        dispatch({ type: 'SET_SHOW_WELCOME_MODAL', payload: true });
+      if (!hasVisited && state.currentView === 'products') { // Only show on first visit and on products view initially        dispatch({ type: 'SET_SHOW_WELCOME_MODAL', payload: true });
         localStorage.setItem(LOCAL_STORAGE_VISITED_KEY, 'true');
       }
     } catch (error) {
@@ -325,6 +326,10 @@ const App: React.FC = () => {
 
   const handleAddToCart = (product: Product, selectedSize: number, priceForSize: number) => {
     dispatch({ type: 'ADD_TO_CART', payload: { product, selectedSize, priceForSize } });
+  };
+
+  const handleShowWelcomeModalExplicitly = () => {
+    dispatch({ type: 'SHOW_WELCOME_MODAL_EXPLICIT' });
   };
 
   const handleRemoveFromCart = (productId: string, selectedSize: number) => {
@@ -507,6 +512,7 @@ const App: React.FC = () => {
           selectedGender={state.selectedGender}
           onGenderChange={(gender) => dispatch({ type: 'SET_SELECTED_GENDER', payload: gender })}
           authorOptions={state.availableAuthors}
+          onShowWelcomeModal={handleShowWelcomeModalExplicitly} // Pasar el nuevo manejador
           selectedAuthor={state.selectedAuthor}
           onAuthorChange={(author) => dispatch({ type: 'SET_SELECTED_AUTHOR', payload: author })}
         />
