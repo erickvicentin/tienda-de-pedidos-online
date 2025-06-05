@@ -13,11 +13,12 @@ interface NavbarProps {
   authorOptions: string[];
   selectedAuthor: string;
   onAuthorChange: (author: string) => void;
+  onShowWelcomeModal: () => void; // Nueva prop para mostrar el modal de bienvenida
 }
 
-const Navbar: React.FC<NavbarProps> = ({ 
-  cartItemCount, 
-  onCartClick, 
+const Navbar: React.FC<NavbarProps> = ({
+  cartItemCount,
+  onCartClick,
   onLogoClick,
   searchTerm,
   onSearchChange,
@@ -26,7 +27,8 @@ const Navbar: React.FC<NavbarProps> = ({
   onGenderChange,
   authorOptions,
   selectedAuthor,
-  onAuthorChange
+  onAuthorChange,
+  onShowWelcomeModal // Recibir la nueva prop
 }) => {
   const commonInputClass = "p-2 rounded-md bg-white text-gray-900 border border-gray-300 focus:ring-2 focus:ring-secondary focus:border-secondary shadow-sm w-full sm:w-auto text-sm placeholder-gray-500";
 
@@ -41,7 +43,12 @@ const Navbar: React.FC<NavbarProps> = ({
             </button>
           </div>
           <div className="flex items-center">
-            <button 
+            <button
+              onClick={onShowWelcomeModal} // Usar la nueva prop
+              className="ml-4 px-3 py-1 text-sm font-semibold text-white border border-white rounded-md hover:bg-white hover:text-primary transition-colors">
+              ¿Cómo comprar?
+            </button>
+            <button
               onClick={onCartClick}
               className="relative p-1 rounded-full text-gray-200 hover:text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-primary focus:ring-white transition-colors"
               aria-label="Ver carrito"
