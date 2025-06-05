@@ -35,25 +35,43 @@ const Navbar: React.FC<NavbarProps> = ({
   return (
     <nav className="bg-primary shadow-lg sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Top row: Logo and Cart */}
-        <div className="flex items-center justify-between h-16">
-          <div className="flex items-center">
-            <button onClick={onLogoClick} className="flex-shrink-0 text-white text-2xl font-bold hover:opacity-80 transition-opacity">
+        {/* Top section: Logo, "Cómo comprar", Cart */}
+        {/* Default: flex-col. sm+: flex-row. items-center for vertical centering in sm+. justify-between for sm+. py-3 for padding when stacked. h-auto for stacked, h-16 for row. */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between py-3 sm:py-0 sm:h-auto sm:h-16">
+
+          {/* Container for Logo and Cart (this forms the first row on small screens) */}
+          <div className="flex items-center justify-between w-full sm:w-auto">
+            <button onClick={onLogoClick} className="flex-shrink-0 text-white text-xl md:text-2xl font-bold hover:opacity-80 transition-opacity">
               Millanel Resistencia
             </button>
+            {/* Cart button - visible only on small screens, part of the top row */}
+            <button
+              onClick={onCartClick}
+              className="relative p-1 rounded-full text-gray-200 hover:text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-primary focus:ring-white transition-colors sm:hidden" /* Hidden on sm and up */
+              aria-label="Ver carrito"
+            >
+              <ShoppingCartIcon className="h-6 w-6" /> {/* Consistent small size for this instance */}
+              {cartItemCount > 0 && (
+                <span className="absolute -top-1 -right-1 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-red-100 bg-red-600 rounded-full">
+                  {cartItemCount}
+                </span>
+              )}
+            </button>
           </div>
-          <div className="flex items-center">
+
+          {/* Container for "Cómo comprar" (second row on small screens) and Cart (on sm screens) */}
+          <div className="w-full sm:w-auto flex flex-col items-center sm:flex-row sm:items-center mt-2 sm:mt-0">
             <button
               onClick={onShowWelcomeModal} // Usar la nueva prop
-              className="ml-4 px-3 py-1 text-sm font-semibold text-white border border-white rounded-md hover:bg-white hover:text-primary transition-colors">
+              className="px-2 py-1 text-xs sm:text-sm font-semibold text-white border border-white rounded-md hover:bg-white hover:text-primary transition-colors w-full max-w-xs sm:w-auto">
               ¿Cómo comprar?
             </button>
             <button
               onClick={onCartClick}
-              className="relative p-1 rounded-full text-gray-200 hover:text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-primary focus:ring-white transition-colors"
+              className="hidden sm:flex relative p-1 rounded-full text-gray-200 hover:text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-primary focus:ring-white transition-colors ml-0 sm:ml-3 mt-2 sm:mt-0" /* Hidden on xs, shown on sm+. mt-2 for xs if it were visible, sm:mt-0 for sm+ */
               aria-label="Ver carrito"
             >
-              <ShoppingCartIcon className="h-7 w-7" />
+              <ShoppingCartIcon className="h-6 sm:h-7 w-6 sm:h-7" />
               {cartItemCount > 0 && (
                 <span className="absolute -top-1 -right-1 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-red-100 bg-red-600 rounded-full">
                   {cartItemCount}

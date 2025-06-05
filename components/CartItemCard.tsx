@@ -20,14 +20,22 @@ const CartItemCard: React.FC<CartItemCardProps> = ({ item, onUpdateQuantity, onR
   };
 
   return (
-    <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-white rounded-lg shadow mb-2">
-      <img src={item.imageUrl} alt={item.name} className="w-16 h-16 object-cover rounded-md mr-4" />
-      <div className="flex-grow">
+    <div className="flex items-start sm:items-center p-4 border-b border-gray-200 bg-white rounded-lg shadow mb-2">
+      {/* Imagen del Producto */}
+      <img src={item.imageUrl} alt={item.name} className="w-16 h-16 object-cover rounded-md mr-4 flex-shrink-0" />
+
+      {/* Contenedor Principal del Contenido (se apila en móvil, fila en desktop) */}
+      <div className="flex-grow flex flex-col sm:flex-row sm:items-center sm:justify-between">
+        
+        {/* Bloque de Información: Nombre, Tamaño, Precio/unidad */}
+        <div className="flex-grow mb-2 sm:mb-0 sm:mr-4">
         <h4 className="text-md font-semibold text-gray-800">{item.name}</h4>
         <p className="text-sm text-gray-500">Tamaño: {item.selectedSize}ml</p>
         <p className="text-sm text-gray-500">${item.price.toFixed(2)} c/u</p>
-      </div>
-      <div className="flex items-center mx-4">
+        </div>
+
+        {/* Selector de Cantidad */}
+        <div className="flex items-center my-2 sm:my-0 sm:mx-4">
         <button
           onClick={() => handleQuantityChange(item.quantity - 1)}
           className="p-1 rounded-full text-primary hover:bg-gray-200 disabled:opacity-50"
@@ -36,7 +44,7 @@ const CartItemCard: React.FC<CartItemCardProps> = ({ item, onUpdateQuantity, onR
         >
           <MinusIcon />
         </button>
-        <span className="mx-2 text-md w-8 text-center">{item.quantity}</span>
+        <span className="mx-3 text-md w-8 text-center">{item.quantity}</span> {/* Aumentado el margen horizontal */}
         <button
           onClick={() => handleQuantityChange(item.quantity + 1)}
           className="p-1 rounded-full text-primary hover:bg-gray-200"
@@ -44,11 +52,18 @@ const CartItemCard: React.FC<CartItemCardProps> = ({ item, onUpdateQuantity, onR
         >
           <PlusIcon />
         </button>
+        </div>
+
+        {/* Precio Total del Ítem */}
+        <p className="text-md font-semibold text-gray-700 sm:w-24 sm:text-right">
+          ${(item.price * item.quantity).toFixed(2)}
+        </p>
       </div>
-      <p className="text-md font-semibold text-gray-700 w-24 text-right">${(item.price * item.quantity).toFixed(2)}</p>
+
+      {/* Botón de Eliminar */}
       <button
         onClick={() => onRemoveItem(item.id, item.selectedSize)}
-        className="ml-4 text-red-500 hover:text-red-700"
+        className="ml-4 text-red-500 hover:text-red-700 self-center flex-shrink-0" // self-center para alinear verticalmente
         aria-label="Eliminar item"
       >
         <TrashIcon className="h-6 w-6" />
