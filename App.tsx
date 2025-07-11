@@ -7,7 +7,8 @@ import {
   User as FirebaseUser,
   signOut as firebaseSignOut
 } from 'firebase/auth';
-import { auth } from './firebaseConfig';
+import { app, auth } from './firebaseConfig';
+import { getFunctions, httpsCallable } from 'firebase/functions';
 import * as productService from './services/productService'; // Importar productService
 import * as orderAdminService from './services/orderService';
 
@@ -269,6 +270,8 @@ function appReducer(state: AppState, action: AppAction): AppState {
 
 const App: React.FC = () => {
   const [state, dispatch] = useReducer(appReducer, initialAppState);
+  const functions = getFunctions(app);
+  const sendOrderNotification = httpsCallable(functions, 'sendOrderNotification');
 
   useEffect(() => {
     dispatch({ type: 'SET_AUTH_LOADING', payload: true });
@@ -395,18 +398,36 @@ const App: React.FC = () => {
     };
     try {
       const result = await submitOrder(order);
-      if (result.success) {
-        const successMessage = `Tu pedido ha sido registrado con éxito.\nID de Pedido: ${result.orderId || 'N/A'}\n\nNos pondremos en contacto contigo a la brevedad para coordinar la entrega.`;
+      if (result.success && result.orderId) {
+        try {
+          const itemsSummary = order.items
+            .map(item => `- ${item.name} (Tamaño: ${item.size}ml, Cant: ${item.quantity})`)
+            .join('\n');
+          const notificationData = {
+            orderId: result.orderId,
+            customerName: order.customerInfo.name,
+            totalAmount: order.totalAmount,
+            address: order.customerInfo.address || 'No especificada',
+            itemsSummary: itemsSummary,
+          };
+          await sendOrderNotification(notificationData);
+          console.log("Notificación de pedido enviada a la función de Firebase.");
+        } catch (notificationError) {
+          console.error("Error al enviar la notificación del pedido:", notificationError);
+        }
+
+        const successMessage = `Tu pedido ha sido registrado con éxito.\nID de Pedido: ${result.orderId}\n\nNos pondremos en contacto contigo a la brevedad para coordinar la entrega.`;
         dispatch({
           type: 'SET_ORDER_SUCCESS',
           payload: { title: '¡Pedido Confirmado!', message: successMessage, orderId: result.orderId }
         });
       } else {
-        const detailedErrorMessage = result.message || 'Ocurrió un error al realizar el pedido.';
+        const detailedErrorMessage = result.message || 'Ocurrió un error desconocido al realizar el pedido.';
         dispatch({ type: 'SET_ORDER_ERROR', payload: detailedErrorMessage });
       }
     } catch (err) {
       const error = err as Error;
+      console.error("Error al procesar el pedido:", err);
       dispatch({ type: 'SET_ORDER_ERROR', payload: error.message || 'Error de conexión al realizar el pedido.' });
     }
     finally {

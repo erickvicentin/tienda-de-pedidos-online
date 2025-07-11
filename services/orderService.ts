@@ -34,14 +34,28 @@ export const submitOrder = async (orderData: Omit<Order, 'id' | 'status'>): Prom
   }
   console.log('Enviando pedido a Firestore:', orderData);
   try {
-    const docData = {
-      owner: orderData.customerInfo.name,
-      phone: orderData.customerInfo.phone,
+    // Ensure optional fields are not undefined
+    const customerInfo = {
+      name: orderData.customerInfo.name,
+      phone: orderData.customerInfo.phone || '', // Default to empty string if undefined
       address: orderData.customerInfo.address,
+    };
+
+    // Simplify items to only include essential fields
+    const simplifiedItems = orderData.items.map(item => ({
+      name: item.name,
+      quantity: item.quantity,
+      size: item.selectedSize, // Corregido de item.size a item.selectedSize
+    }));
+
+    const docData = {
+      owner: customerInfo.name,
+      phone: customerInfo.phone,
+      address: customerInfo.address,
       issue_date: Timestamp.fromDate(new Date(orderData.orderDate)),
       total_amount: orderData.totalAmount,
       status: 'Pendiente' as OrderStatus,
-      product_cart: orderData.items, // Storing the full CartItem array
+      product_cart: simplifiedItems, // Storing the simplified item array
     };
 
     const ordersCollection = collection(db, 'orders');
@@ -50,6 +64,7 @@ export const submitOrder = async (orderData: Omit<Order, 'id' | 'status'>): Prom
     console.log('Pedido enviado con éxito a Firestore con ID:', docRef.id);
     return {
       success: true,
+
       message: '¡Pedido realizado con éxito! Nos comunicaremos pronto contigo.',
       orderId: docRef.id,
     };
