@@ -333,10 +333,10 @@ const App: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    if (state.currentView === 'admin_order_list' && state.orders.length === 0 && !state.isLoadingOrders) {
+    if (state.currentView === 'admin_order_list') {
       loadOrders();
     }
-  }, [state.currentView, state.orders.length, state.isLoadingOrders, loadOrders]);
+  }, [state.currentView, loadOrders]);
 
   useEffect(() => {
     loadProducts();
