@@ -132,6 +132,7 @@ export const getOrders = async (): Promise<Order[]> => {
 
     return {
       id: doc.id,
+      orderNumber: data.orderNumber, // Añadir el nuevo campo
       status: data.status as OrderStatus || 'Pendiente',
       customerInfo: {
         name: data.owner || 'Sin nombre',

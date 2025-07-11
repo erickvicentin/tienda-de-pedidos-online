@@ -33,6 +33,7 @@ export interface CustomerInfo {
 
 export interface Order {
   id: string;
+  orderNumber?: number;
   status: OrderStatus;
   items: CartItem[];
   customerInfo: CustomerInfo;

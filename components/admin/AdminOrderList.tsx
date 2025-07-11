@@ -46,6 +46,7 @@ const AdminOrderList: React.FC<AdminOrderListProps> = ({ orders, onUpdateStatus,
             <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                     <tr>
+                        <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">N° Pedido</th>
                         <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID Pedido</th>
                         <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha</th>
                         <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nombre Cliente</th>
@@ -60,6 +61,9 @@ const AdminOrderList: React.FC<AdminOrderListProps> = ({ orders, onUpdateStatus,
                 <tbody className="bg-white divide-y divide-gray-200">
                     {orders.map((order) => (
                         <tr key={order.id} className="hover:bg-gray-50 transition-colors">
+                            <td className="px-4 py-4 whitespace-nowrap text-sm font-bold text-gray-900">
+                                {order.orderNumber || 'N/A'}
+                            </td>
                             <td className="px-4 py-4 whitespace-nowrap">
                                 <div className="text-xs text-gray-500" title={order.id}>{order.id.substring(0, 12)}...</div>
                             </td>
