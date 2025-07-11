@@ -1,6 +1,6 @@
 
 
-import { Product, Gender, ProductCategory } from './types';
+import { Product, Gender, ProductCategory, OrderStatus } from './types';
 
 export const GLOBAL_SIZE_PRICES: { [size: number]: number } = {
   30: 11000.00,
@@ -10,7 +10,7 @@ export const GLOBAL_SIZE_PRICES: { [size: number]: number } = {
 };
 
 export const AVAILABLE_PRODUCT_CATEGORIES: ProductCategory[] = ['Fragancia', 'Cosmética', 'Accesorio', 'Bazar', 'Otra'];
-
+export const ORDER_STATUS_OPTIONS: OrderStatus[] = ['Pendiente', 'Confirmado', 'Retirado', 'Entregado', 'Pagado', 'Cancelado'];
 
 export const MOCK_PRODUCTS: Product[] = [
   {

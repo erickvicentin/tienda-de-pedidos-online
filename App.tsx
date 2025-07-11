@@ -9,8 +9,10 @@ import {
 } from 'firebase/auth';
 import { auth } from './firebaseConfig';
 import * as productService from './services/productService'; // Importar productService
+import * as orderAdminService from './services/orderService';
 
-import { Product, CartItem, CustomerInfo, Order, ViewState, AppState, AppAction } from './types'; // Import MockUser
+
+import { Product, CartItem, CustomerInfo, Order, ViewState, AppState, AppAction, OrderStatus } from './types'; // Import MockUser
 import { fetchProducts as fetchProductsFromOrderService, submitOrder } from './services/orderService';
 import Navbar from './components/Navbar';
 import ProductList from './components/ProductList';
@@ -33,9 +35,11 @@ const LOCAL_STORAGE_VISITED_KEY = 'millanelResistenciaHasVisited';
 
 const initialAppState: AppState = {
   products: [],
+  orders: [],
   cart: [],
   currentView: 'products',
   isLoadingProducts: true,
+  isLoadingOrders: true,
   isSubmittingOrder: false,
   error: null,
   confirmationMessage: null,
@@ -167,6 +171,21 @@ function appReducer(state: AppState, action: AppAction): AppState {
       return { ...state, snackbarMessage: null };
     case 'SHOW_WELCOME_MODAL_EXPLICIT': // Nueva acción para mostrar el modal explícitamente
       return { ...state, showWelcomeModal: true };
+    // ADMIN ORDERS
+    case 'SET_ORDERS_LOADING':
+      return { ...state, isLoadingOrders: action.payload, adminOperationError: null };
+    case 'SET_ORDERS_SUCCESS':
+      return { ...state, isLoadingOrders: false, orders: action.payload };
+    case 'SET_ORDERS_ERROR':
+      return { ...state, isLoadingOrders: false, adminOperationError: action.payload };
+    case 'ADMIN_UPDATE_ORDER_STATUS':
+      return {
+        ...state,
+        orders: state.orders.map(order =>
+          order.id === action.payload.orderId ? { ...order, status: action.payload.status } : order
+        ),
+        isAdminOperationLoading: false,
+      };
 
     case 'ADMIN_ADD_PRODUCT':
       return {
@@ -223,7 +242,7 @@ function appReducer(state: AppState, action: AppAction): AppState {
     case 'FIREBASE_LOGIN_REQUEST':
       return { ...state, authLoading: true, authError: null };
     case 'FIREBASE_LOGIN_SUCCESS':
-      return { ...state, currentUser: action.payload, currentView: 'admin_product_list', authLoading: false, authError: null };
+      return { ...state, currentUser: action.payload, currentView: 'admin_dashboard', authLoading: false, authError: null };
     case 'FIREBASE_LOGIN_FAILURE':
       return { ...state, currentUser: null, authError: action.payload, authLoading: false };
     case 'FIREBASE_LOGOUT_REQUEST':
@@ -234,6 +253,7 @@ function appReducer(state: AppState, action: AppAction): AppState {
         authLoading: false, authError: null,
         editingProduct: null, productToDelete: null,
         isAdminOperationLoading: false, adminOperationError: null,
+        orders: [], isLoadingOrders: false,
       };
 
     case 'SET_ADMIN_OPERATION_LOADING':
@@ -298,6 +318,24 @@ const App: React.FC = () => {
     }
   }, []);
 
+  const loadOrders = useCallback(async () => {
+    dispatch({ type: 'SET_ORDERS_LOADING', payload: true });
+    try {
+      const fetchedOrders = await orderAdminService.getOrders();
+      dispatch({ type: 'SET_ORDERS_SUCCESS', payload: fetchedOrders });
+    } catch (err) {
+      console.error("Error al cargar pedidos (mock):", err);
+      const errorMessage = err instanceof Error ? err.message : 'No se pudieron cargar los pedidos.';
+      dispatch({ type: 'SET_ORDERS_ERROR', payload: errorMessage });
+    }
+  }, []);
+
+  useEffect(() => {
+    if (state.currentView === 'admin_order_list' && state.orders.length === 0 && !state.isLoadingOrders) {
+      loadOrders();
+    }
+  }, [state.currentView, state.orders.length, state.isLoadingOrders, loadOrders]);
+
   useEffect(() => {
     loadProducts();
   }, [loadProducts]);
@@ -350,7 +388,7 @@ const App: React.FC = () => {
 
   const handlePlaceOrder = async (customerInfo: CustomerInfo) => {
     dispatch({ type: 'SET_ORDER_SUBMITTING', payload: true });
-    const order: Order = {
+    const order: Omit<Order, 'id' | 'status'> = {
       items: state.cart, customerInfo,
       totalAmount: state.cart.reduce((sum, item) => sum + item.price * item.quantity, 0),
       orderDate: new Date().toISOString(),
@@ -364,10 +402,7 @@ const App: React.FC = () => {
           payload: { title: '¡Pedido Confirmado!', message: successMessage, orderId: result.orderId }
         });
       } else {
-        let detailedErrorMessage = result.message || 'Ocurrió un error al realizar el pedido.';
-        if (result.scriptErrorDetails) {
-          detailedErrorMessage += `\nDetalles del error del script: Nombre: ${result.scriptErrorDetails.name || 'N/A'}, Mensaje: ${result.scriptErrorDetails.message || 'N/A'}`;
-        }
+        const detailedErrorMessage = result.message || 'Ocurrió un error al realizar el pedido.';
         dispatch({ type: 'SET_ORDER_ERROR', payload: detailedErrorMessage });
       }
     } catch (err) {
@@ -383,7 +418,7 @@ const App: React.FC = () => {
 
   const handleAdminAccess = () => {
     if (state.currentUser) {
-      dispatch({ type: 'SET_VIEW', payload: 'admin_product_list' });
+      dispatch({ type: 'SET_VIEW', payload: 'admin_dashboard' });
     } else {
       dispatch({ type: 'SET_VIEW', payload: 'admin_login' });
     }
@@ -438,6 +473,21 @@ const App: React.FC = () => {
     }
   };
 
+  const handleUpdateOrderStatus = async (orderId: string, status: OrderStatus) => {
+    dispatch({ type: 'SET_ADMIN_OPERATION_LOADING', payload: true });
+    try {
+      await orderAdminService.updateOrderStatus(orderId, status);
+      dispatch({ type: 'ADMIN_UPDATE_ORDER_STATUS', payload: { orderId, status } });
+      dispatch({ type: 'SHOW_SNACKBAR', payload: `Estado del pedido actualizado a ${status}` });
+    } catch (error) {
+      console.error("Error actualizando estado del pedido (mock):", error);
+      const message = error instanceof Error ? error.message : 'No se pudo actualizar el estado.';
+      dispatch({ type: 'SET_ADMIN_OPERATION_ERROR', payload: message });
+    } finally {
+      dispatch({ type: 'SET_ADMIN_OPERATION_LOADING', payload: false });
+    }
+  };
+
   const handleToggleProductVisibilityInAdmin = async (productId: string, currentVisibility: boolean) => {
     dispatch({ type: 'SET_ADMIN_OPERATION_LOADING', payload: true });
     dispatch({ type: 'CLEAR_ADMIN_OPERATION_ERROR' });
@@ -475,12 +525,15 @@ const App: React.FC = () => {
         <AdminView
           currentView={state.currentView}
           products={state.products}
+          orders={state.orders} 
           editingProduct={state.editingProduct}
           dispatch={dispatch}
           onLogout={handleLogout}
           onSaveProduct={handleSaveProductInAdmin}
           onToggleProductVisibility={handleToggleProductVisibilityInAdmin} // Pasar el nuevo manejador
+          onUpdateOrderStatus={handleUpdateOrderStatus}
           isLoading={state.isAdminOperationLoading}
+          isOrdersLoading={state.isLoadingOrders} 
           error={state.adminOperationError}
         />
       );
