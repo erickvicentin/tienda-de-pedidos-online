@@ -8,7 +8,6 @@ import {
   signOut as firebaseSignOut
 } from 'firebase/auth';
 import { app, auth } from './firebaseConfig';
-import { getFunctions, httpsCallable } from 'firebase/functions';
 import * as productService from './services/productService'; // Importar productService
 import * as orderAdminService from './services/orderService';
 
@@ -270,8 +269,6 @@ function appReducer(state: AppState, action: AppAction): AppState {
 
 const App: React.FC = () => {
   const [state, dispatch] = useReducer(appReducer, initialAppState);
-  const functions = getFunctions(app);
-  const sendOrderNotification = httpsCallable(functions, 'sendOrderNotification');
 
   useEffect(() => {
     dispatch({ type: 'SET_AUTH_LOADING', payload: true });
@@ -391,41 +388,55 @@ const App: React.FC = () => {
 
   const handlePlaceOrder = async (customerInfo: CustomerInfo) => {
     dispatch({ type: 'SET_ORDER_SUBMITTING', payload: true });
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzadV7VtzQdtCnuZBOhHQjp6gbS1IsBfDAYfLWFnV-N0pQCRonLYRfuSuZifx74QEzNZQ/exec";
     const order: Omit<Order, 'id' | 'status'> = {
       items: state.cart, customerInfo,
       totalAmount: state.cart.reduce((sum, item) => sum + item.price * item.quantity, 0),
       orderDate: new Date().toISOString(),
     };
+
     try {
+      // Paso 1: Guardar el pedido en Firestore
       const result = await submitOrder(order);
+
       if (result.success && result.orderId) {
+        // Paso 2: Si Firestore tuvo éxito, enviar notificación a Google Apps Script.
+        // Esto se hace en un try/catch separado para no afectar la experiencia del usuario si falla.
         try {
-          const itemsSummary = order.items
-            .map(item => `- ${item.name} (Tamaño: ${item.size}ml, Cant: ${item.quantity})`)
-            .join('\n');
-          const notificationData = {
-            orderId: result.orderId,
-            customerName: order.customerInfo.name,
-            totalAmount: order.totalAmount,
-            address: order.customerInfo.address || 'No especificada',
-            itemsSummary: itemsSummary,
-          };
-          await sendOrderNotification(notificationData);
-          console.log("Notificación de pedido enviada a la función de Firebase.");
+          console.log('Enviando notificación a Google Apps Script:', order);
+          const response = await fetch(SCRIPT_URL, {
+            method: 'POST',
+            mode: 'cors',
+            headers: {
+              'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: new URLSearchParams({ data: JSON.stringify(order) }).toString(),
+          });
+
+          if (response.ok) {
+            console.log('Notificación a Google Apps Script enviada con éxito.');
+          } else {
+            const errorText = await response.text();
+            console.error('Error en la respuesta de Google Apps Script:', errorText);
+          }
         } catch (notificationError) {
-          console.error("Error al enviar la notificación del pedido:", notificationError);
+          console.error("Error de red al enviar la notificación a Google Apps Script:", notificationError);
         }
 
+        // Paso 3: Mostrar mensaje de éxito al usuario, independientemente del resultado de la notificación.
         const successMessage = `Tu pedido ha sido registrado con éxito.\nID de Pedido: ${result.orderId}\n\nNos pondremos en contacto contigo a la brevedad para coordinar la entrega.`;
         dispatch({
           type: 'SET_ORDER_SUCCESS',
           payload: { title: '¡Pedido Confirmado!', message: successMessage, orderId: result.orderId }
         });
+
       } else {
+        // Manejar el caso en que el guardado en Firestore falló.
         const detailedErrorMessage = result.message || 'Ocurrió un error desconocido al realizar el pedido.';
         dispatch({ type: 'SET_ORDER_ERROR', payload: detailedErrorMessage });
       }
     } catch (err) {
+      // Manejar errores de red o excepciones al llamar a submitOrder.
       const error = err as Error;
       console.error("Error al procesar el pedido:", err);
       dispatch({ type: 'SET_ORDER_ERROR', payload: error.message || 'Error de conexión al realizar el pedido.' });
