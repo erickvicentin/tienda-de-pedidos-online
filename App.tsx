@@ -1,6 +1,3 @@
-
-
-
 import React, { useEffect, useCallback, useMemo, useReducer } from 'react';
 import {
   onAuthStateChanged,
@@ -8,11 +5,10 @@ import {
   signOut as firebaseSignOut
 } from 'firebase/auth';
 import { app, auth } from './firebaseConfig';
-import * as productService from './services/productService'; // Importar productService
+import * as productService from './services/productService';
 import * as orderAdminService from './services/orderService';
 
-
-import { Product, CartItem, CustomerInfo, Order, ViewState, AppState, AppAction, OrderStatus } from './types'; // Import MockUser
+import { Product, CartItem, CustomerInfo, Order, ViewState, AppState, AppAction, OrderStatus } from './types';
 import { fetchProducts as fetchProductsFromOrderService, submitOrder } from './services/orderService';
 import Navbar from './components/Navbar';
 import ProductList from './components/ProductList';
@@ -21,7 +17,7 @@ import LoadingSpinner from './components/LoadingSpinner';
 import Modal from './components/Modal';
 import ImagePreviewModal from './components/ImagePreviewModal';
 import WelcomeModal from './components/WelcomeModal';
-import Snackbar from './components/Snackbar'; // Import Snackbar
+import Snackbar from './components/Snackbar';
 import WhatsAppIcon from './components/icons/WhatsAppIcon';
 import SettingsIcon from './components/icons/SettingsIcon';
 import AdminView from './components/admin/AdminView';
@@ -49,9 +45,10 @@ const initialAppState: AppState = {
   availableAuthors: [ALL_AUTHORS_OPTION],
   previewImageUrl: null,
   showWelcomeModal: false,
-  snackbarMessage: null, // Initial state for snackbar
+  snackbarMessage: null,
   editingProduct: null,
   productToDelete: null,
+  orderToDelete: null,
   currentUser: null,
   authLoading: true,
   authError: null,
@@ -136,6 +133,7 @@ function appReducer(state: AppState, action: AppAction): AppState {
         confirmationMessage: action.payload === 'products' ? null : state.confirmationMessage,
         editingProduct: isAdminViewExiting ? null : state.editingProduct,
         productToDelete: isAdminViewExiting ? null : state.productToDelete,
+        orderToDelete: isAdminViewExiting ? null : state.orderToDelete,
         authError: (action.payload === 'admin_login') ? null : state.authError,
         adminOperationError: null,
       };
@@ -169,9 +167,8 @@ function appReducer(state: AppState, action: AppAction): AppState {
       return { ...state, snackbarMessage: action.payload };
     case 'HIDE_SNACKBAR':
       return { ...state, snackbarMessage: null };
-    case 'SHOW_WELCOME_MODAL_EXPLICIT': // Nueva acción para mostrar el modal explícitamente
+    case 'SHOW_WELCOME_MODAL_EXPLICIT':
       return { ...state, showWelcomeModal: true };
-    // ADMIN ORDERS
     case 'SET_ORDERS_LOADING':
       return { ...state, isLoadingOrders: action.payload, adminOperationError: null };
     case 'SET_ORDERS_SUCCESS':
@@ -186,7 +183,17 @@ function appReducer(state: AppState, action: AppAction): AppState {
         ),
         isAdminOperationLoading: false,
       };
-
+    case 'ADMIN_CONFIRM_DELETE_ORDER':
+      return { ...state, orderToDelete: action.payload };
+    case 'ADMIN_CANCEL_DELETE_ORDER':
+      return { ...state, orderToDelete: null };
+    case 'ADMIN_DELETE_ORDER_SUCCESS':
+      return {
+        ...state,
+        orders: state.orders.filter(order => order.id !== action.payload),
+        orderToDelete: null,
+        isAdminOperationLoading: false,
+      };
     case 'ADMIN_ADD_PRODUCT':
       return {
         ...state, products: [...state.products, action.payload],
@@ -228,14 +235,13 @@ function appReducer(state: AppState, action: AppAction): AppState {
       return {
         ...state,
         products: updatedProducts,
-        isAdminOperationLoading: false, // Se asume que esto se maneja en el handler
+        isAdminOperationLoading: false,
         adminOperationError: null,
       };
     }
-
     case 'SET_AUTH_LOADING':
       return { ...state, authLoading: action.payload };
-    case 'SET_CURRENT_USER': // Generic action to set user, could be used by mock system
+    case 'SET_CURRENT_USER':
       return { ...state, currentUser: action.payload, authLoading: false, authError: null };
     case 'SET_AUTH_ERROR':
       return { ...state, authError: action.payload, authLoading: false };
@@ -255,7 +261,6 @@ function appReducer(state: AppState, action: AppAction): AppState {
         isAdminOperationLoading: false, adminOperationError: null,
         orders: [], isLoadingOrders: false,
       };
-
     case 'SET_ADMIN_OPERATION_LOADING':
       return { ...state, isAdminOperationLoading: action.payload, adminOperationError: action.payload ? null : state.adminOperationError };
     case 'SET_ADMIN_OPERATION_ERROR':
@@ -282,18 +287,15 @@ const App: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    // Check for first visit to show welcome modal
     try {
       const hasVisited = localStorage.getItem(LOCAL_STORAGE_VISITED_KEY);
-      if (!hasVisited && state.currentView === 'products') { // Only show on first visit and on products view initially        dispatch({ type: 'SET_SHOW_WELCOME_MODAL', payload: true });
+      if (!hasVisited && state.currentView === 'products') {
+        dispatch({ type: 'SET_SHOW_WELCOME_MODAL', payload: true });
         localStorage.setItem(LOCAL_STORAGE_VISITED_KEY, 'true');
       }
     } catch (error) {
       console.warn("Could not access localStorage for welcome modal:", error);
-      // Potentially dispatch to show welcome modal anyway if localStorage fails,
-      // or log this and proceed without. For now, just log and proceed.
     }
-
     loadProducts();
   }, []);
 
@@ -301,7 +303,7 @@ const App: React.FC = () => {
     if (state.snackbarMessage) {
       const timer = setTimeout(() => {
         dispatch({ type: 'HIDE_SNACKBAR' });
-      }, 3000); // Snackbar duration
+      }, 3000);
       return () => clearTimeout(timer);
     }
   }, [state.snackbarMessage]);
@@ -324,7 +326,7 @@ const App: React.FC = () => {
       const fetchedOrders = await orderAdminService.getOrders();
       dispatch({ type: 'SET_ORDERS_SUCCESS', payload: fetchedOrders });
     } catch (err) {
-      console.error("Error al cargar pedidos (mock):", err);
+      console.error("Error al cargar pedidos:", err);
       const errorMessage = err instanceof Error ? err.message : 'No se pudieron cargar los pedidos.';
       dispatch({ type: 'SET_ORDERS_ERROR', payload: errorMessage });
     }
@@ -345,8 +347,7 @@ const App: React.FC = () => {
   }, [state.availableAuthors]);
 
   const filteredProducts = useMemo(() => {
-    let currentProducts = state.products.filter(product => product.isVisible === true); // Filtrar estrictamente: solo mostrar si isVisible es true
-
+    let currentProducts = state.products.filter(product => product.isVisible === true);
     if (state.searchTerm.trim() !== '') {
       currentProducts = currentProducts.filter(product =>
         product.name.toLowerCase().includes(state.searchTerm.toLowerCase()) ||
@@ -396,12 +397,8 @@ const App: React.FC = () => {
     };
 
     try {
-      // Paso 1: Guardar el pedido en Firestore
       const result = await submitOrder(order);
-
       if (result.success && result.orderId) {
-        // Paso 2: Si Firestore tuvo éxito, enviar notificación a Google Apps Script.
-        // Esto se hace en un try/catch separado para no afectar la experiencia del usuario si falla.
         try {
           console.log('Enviando notificación a Google Apps Script:', order);
           const response = await fetch(SCRIPT_URL, {
@@ -412,7 +409,6 @@ const App: React.FC = () => {
             },
             body: new URLSearchParams({ data: JSON.stringify(order) }).toString(),
           });
-
           if (response.ok) {
             console.log('Notificación a Google Apps Script enviada con éxito.');
           } else {
@@ -422,21 +418,16 @@ const App: React.FC = () => {
         } catch (notificationError) {
           console.error("Error de red al enviar la notificación a Google Apps Script:", notificationError);
         }
-
-        // Paso 3: Mostrar mensaje de éxito al usuario, independientemente del resultado de la notificación.
         const successMessage = `Tu pedido ha sido registrado con éxito.\nID de Pedido: ${result.orderId}\n\nNos pondremos en contacto contigo a la brevedad para coordinar la entrega.`;
         dispatch({
           type: 'SET_ORDER_SUCCESS',
           payload: { title: '¡Pedido Confirmado!', message: successMessage, orderId: result.orderId }
         });
-
       } else {
-        // Manejar el caso en que el guardado en Firestore falló.
         const detailedErrorMessage = result.message || 'Ocurrió un error desconocido al realizar el pedido.';
         dispatch({ type: 'SET_ORDER_ERROR', payload: detailedErrorMessage });
       }
     } catch (err) {
-      // Manejar errores de red o excepciones al llamar a submitOrder.
       const error = err as Error;
       console.error("Error al procesar el pedido:", err);
       dispatch({ type: 'SET_ORDER_ERROR', payload: error.message || 'Error de conexión al realizar el pedido.' });
@@ -512,11 +503,28 @@ const App: React.FC = () => {
       dispatch({ type: 'ADMIN_UPDATE_ORDER_STATUS', payload: { orderId, status } });
       dispatch({ type: 'SHOW_SNACKBAR', payload: `Estado del pedido actualizado a ${status}` });
     } catch (error) {
-      console.error("Error actualizando estado del pedido (mock):", error);
+      console.error("Error actualizando estado del pedido:", error);
       const message = error instanceof Error ? error.message : 'No se pudo actualizar el estado.';
       dispatch({ type: 'SET_ADMIN_OPERATION_ERROR', payload: message });
     } finally {
       dispatch({ type: 'SET_ADMIN_OPERATION_LOADING', payload: false });
+    }
+  };
+
+  const handleDeleteOrder = (order: Order) => {
+    dispatch({ type: 'ADMIN_CONFIRM_DELETE_ORDER', payload: order });
+  };
+
+  const handleConfirmDeleteOrder = async (orderId: string) => {
+    dispatch({ type: 'SET_ADMIN_OPERATION_LOADING', payload: true });
+    try {
+      await orderAdminService.deleteOrder(orderId);
+      dispatch({ type: 'ADMIN_DELETE_ORDER_SUCCESS', payload: orderId });
+      dispatch({ type: 'SHOW_SNACKBAR', payload: '¡Pedido eliminado exitosamente!' });
+    } catch (error) {
+      console.error("Error eliminando pedido:", error);
+      const message = error instanceof Error ? error.message : 'No se pudo eliminar el pedido.';
+      dispatch({ type: 'SET_ADMIN_OPERATION_ERROR', payload: message });
     }
   };
 
@@ -529,15 +537,13 @@ const App: React.FC = () => {
       dispatch({ type: 'ADMIN_TOGGLE_PRODUCT_VISIBILITY', payload: { productId, isVisible: newVisibility } });
       dispatch({ type: 'SHOW_SNACKBAR', payload: `Visibilidad del producto ${newVisibility ? 'activada' : 'desactivada'}.` });
     } catch (error) {
-      console.error("Error cambiando visibilidad del producto (mock):", error);
+      console.error("Error cambiando visibilidad del producto:", error);
       const message = error instanceof Error ? error.message : 'No se pudo cambiar la visibilidad.';
       dispatch({ type: 'SET_ADMIN_OPERATION_ERROR', payload: message });
-      // Revert visual state on error if desired, or let AdminProductList handle its disabled state
     } finally {
       dispatch({ type: 'SET_ADMIN_OPERATION_LOADING', payload: false });
     }
   };
-
 
   const renderContent = () => {
     if (state.authLoading && !state.currentUser && (state.currentView === 'admin_login' || state.currentView.startsWith('admin_'))) {
@@ -557,15 +563,16 @@ const App: React.FC = () => {
         <AdminView
           currentView={state.currentView}
           products={state.products}
-          orders={state.orders} 
+          orders={state.orders}
           editingProduct={state.editingProduct}
           dispatch={dispatch}
           onLogout={handleLogout}
           onSaveProduct={handleSaveProductInAdmin}
-          onToggleProductVisibility={handleToggleProductVisibilityInAdmin} // Pasar el nuevo manejador
+          onToggleProductVisibility={handleToggleProductVisibilityInAdmin}
           onUpdateOrderStatus={handleUpdateOrderStatus}
+          onDeleteOrder={handleDeleteOrder}
           isLoading={state.isAdminOperationLoading}
-          isOrdersLoading={state.isLoadingOrders} 
+          isOrdersLoading={state.isLoadingOrders}
           error={state.adminOperationError}
         />
       );
@@ -597,7 +604,7 @@ const App: React.FC = () => {
           selectedGender={state.selectedGender}
           onGenderChange={(gender) => dispatch({ type: 'SET_SELECTED_GENDER', payload: gender })}
           authorOptions={state.availableAuthors}
-          onShowWelcomeModal={handleShowWelcomeModalExplicitly} // Pasar el nuevo manejador
+          onShowWelcomeModal={handleShowWelcomeModalExplicitly}
           selectedAuthor={state.selectedAuthor}
           onAuthorChange={(author) => dispatch({ type: 'SET_SELECTED_AUTHOR', payload: author })}
         />
@@ -690,6 +697,21 @@ const App: React.FC = () => {
           message={state.adminOperationError}
           type="error"
           onClose={() => dispatch({ type: 'CLEAR_ADMIN_OPERATION_ERROR' })}
+        />
+      )}
+
+      {state.orderToDelete && state.currentView.startsWith('admin_') && state.currentUser && (
+        <Modal
+          title="Confirmar Eliminación de Pedido"
+          message={`¿Estás seguro de que deseas eliminar el pedido con ID "${state.orderToDelete.id.substring(0, 12)}..." del cliente "${state.orderToDelete.customerInfo.name}"? Esta acción no se puede deshacer.`}
+          type="warning"
+          onClose={() => dispatch({ type: 'ADMIN_CANCEL_DELETE_ORDER' })}
+          onConfirm={() => {
+            if (state.orderToDelete) {
+              handleConfirmDeleteOrder(state.orderToDelete.id);
+            }
+          }}
+          confirmText="Eliminar Pedido"
         />
       )}
 

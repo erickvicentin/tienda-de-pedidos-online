@@ -12,7 +12,8 @@ import {
   updateDoc,
   query,
   orderBy,
-  Timestamp
+  Timestamp,
+  deleteDoc
 } from 'firebase/firestore';
 
 
@@ -157,4 +158,16 @@ export const updateOrderStatus = async (orderId: string, status: OrderStatus): P
   await updateDoc(orderRef, {
     status: status
   });
+};
+
+// Function to delete an order from Firestore
+export const deleteOrder = async (orderId: string): Promise<void> => {
+  if (!db) {
+    console.error("deleteOrder: La base de datos no está inicializada.");
+    throw new Error('La base de datos no está inicializada.');
+  }
+  console.log(`orderService: Deleting order ${orderId} from Firestore`);
+
+  const orderRef = doc(db, 'orders', orderId);
+  await deleteDoc(orderRef);
 };

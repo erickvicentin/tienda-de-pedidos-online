@@ -80,6 +80,7 @@ export interface AppState {
   // Estados de Admin
   editingProduct: Product | null;
   productToDelete: Product | null;
+  orderToDelete: Order | null;
 
   // Estados de Autenticación de Firebase
   currentUser: User | null; // Usuario de Firebase
@@ -129,6 +130,9 @@ export type AppAction =
   | { type: 'SET_ORDERS_SUCCESS'; payload: Order[] }
   | { type: 'SET_ORDERS_ERROR'; payload: string }
   | { type: 'ADMIN_UPDATE_ORDER_STATUS'; payload: { orderId: string; status: OrderStatus } }
+  | { type: 'ADMIN_CONFIRM_DELETE_ORDER'; payload: Order | null }
+  | { type: 'ADMIN_CANCEL_DELETE_ORDER' }
+  | { type: 'ADMIN_DELETE_ORDER_SUCCESS'; payload: string } // orderId
 
   // Acciones de Autenticación de Firebase
   | { type: 'SET_AUTH_LOADING'; payload: boolean }

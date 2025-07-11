@@ -2,14 +2,16 @@
 import React from 'react';
 import { Order, OrderStatus } from '../../types';
 import { ORDER_STATUS_OPTIONS } from '../../constants';
+import TrashIcon from '../icons/TrashIcon';
 
 interface AdminOrderListProps {
     orders: Order[];
     onUpdateStatus: (orderId: string, status: OrderStatus) => Promise<void>;
+    onDeleteOrder: (order: Order) => void;
     disabled?: boolean;
 }
 
-const AdminOrderList: React.FC<AdminOrderListProps> = ({ orders, onUpdateStatus, disabled = false }) => {
+const AdminOrderList: React.FC<AdminOrderListProps> = ({ orders, onUpdateStatus, onDeleteOrder, disabled = false }) => {
     if (orders.length === 0) {
         return <p className="text-center text-gray-500 py-10">No hay pedidos para mostrar.</p>;
     }
@@ -52,6 +54,7 @@ const AdminOrderList: React.FC<AdminOrderListProps> = ({ orders, onUpdateStatus,
                         <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Items</th>
                         <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total</th>
                         <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</th>
+                        <th scope="col" className="px-1 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Acción</th>
                     </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
@@ -88,6 +91,17 @@ const AdminOrderList: React.FC<AdminOrderListProps> = ({ orders, onUpdateStatus,
                                         <option key={status} value={status}>{status}</option>
                                     ))}
                                 </select>
+                            </td>
+                            <td className="px-1 py-4 text-center">
+                                <button
+                                    onClick={() => onDeleteOrder(order)}
+                                    disabled={disabled}
+                                    className="p-2 rounded-full text-gray-400 hover:text-red-600 hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    aria-label={`Eliminar pedido ${order.id}`}
+                                    title="Eliminar Pedido"
+                                >
+                                    <TrashIcon className="h-5 w-5" />
+                                </button>
                             </td>
                         </tr>
                     ))}

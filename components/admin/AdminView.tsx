@@ -19,6 +19,7 @@ interface AdminViewProps {
   onSaveProduct: (productData: Product | Omit<Product, 'id'>) => Promise<void>;
   onToggleProductVisibility: (productId: string, currentVisibility: boolean) => Promise<void>;
   onUpdateOrderStatus: (orderId: string, status: OrderStatus) => Promise<void>;
+  onDeleteOrder: (order: Order) => void;
   isLoading: boolean;
   isOrdersLoading: boolean;
   error: string | null;
@@ -65,6 +66,7 @@ const AdminView: React.FC<AdminViewProps> = ({
   onSaveProduct,
   onToggleProductVisibility,
   onUpdateOrderStatus,
+  onDeleteOrder,
   isLoading,
   isOrdersLoading,
   error
@@ -170,6 +172,7 @@ const AdminView: React.FC<AdminViewProps> = ({
             <AdminOrderList
               orders={orders}
               onUpdateStatus={onUpdateOrderStatus}
+              onDeleteOrder={onDeleteOrder}
               disabled={isLoading} // disable select while any admin op is running
             />
           )}
