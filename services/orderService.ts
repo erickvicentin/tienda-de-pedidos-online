@@ -94,22 +94,52 @@ export const getOrders = async (): Promise<Order[]> => {
 
   const orders: Order[] = querySnapshot.docs.map(doc => {
     const data = doc.data();
-    const orderDate = data.issue_date instanceof Timestamp
-      ? data.issue_date.toDate().toISOString()
-      // Fallback for manually entered data that might not be a Timestamp
-      : new Date(data.issue_date).toISOString() || new Date().toISOString();
+    let orderDate: string;
+
+    // Defensive check for issue_date
+    if (data.issue_date) {
+      orderDate = data.issue_date instanceof Timestamp
+        ? data.issue_date.toDate().toISOString()
+        : new Date(data.issue_date).toISOString();
+    } else {
+      console.warn(`El pedido con ID ${doc.id} no tiene fecha (issue_date). Usando fecha actual como fallback.`);
+      orderDate = new Date().toISOString();
+    }
+    
+    // Defensive check for product_cart and its items
+    const items = (data.product_cart || []).map((item: any, index: number) => {
+      if (!item || typeof item !== 'object') {
+        console.warn(`Elemento inválido en product_cart para el pedido ${doc.id} en el índice ${index}. Omitiendo.`);
+        return null; // Será filtrado más abajo
+      }
+      return {
+        id: item.id || `temp-id-${index}`, // Provide a temporary unique ID
+        name: item.name || 'Producto Desconocido',
+        quantity: item.quantity || 0,
+        selectedSize: item.size !== undefined ? item.size : 0, // Map size to selectedSize with fallback
+        price: item.price || 0,
+        // Fill with default values to satisfy the CartItem type
+        description: item.description || '',
+        imageUrl: item.imageUrl || '',
+        category: item.category || 'Otra',
+        gender: item.gender || 'Unisex',
+        author: item.author || '',
+        sizes: item.sizes || [],
+      };
+    }).filter((item): item is CartItem => item !== null);
+
 
     return {
       id: doc.id,
-      status: data.status as OrderStatus,
+      status: data.status as OrderStatus || 'Pendiente',
       customerInfo: {
-        name: data.owner,
-        phone: data.phone,
-        address: data.address,
+        name: data.owner || 'Sin nombre',
+        phone: data.phone || 'Sin teléfono',
+        address: data.address || 'Sin dirección',
       },
-      totalAmount: data.total_amount,
+      totalAmount: data.total_amount || 0,
       orderDate: orderDate,
-      items: data.product_cart as CartItem[],
+      items: items,
     };
   });
   return orders;

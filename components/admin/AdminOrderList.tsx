@@ -70,7 +70,7 @@ const AdminOrderList: React.FC<AdminOrderListProps> = ({ orders, onUpdateStatus,
                             <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">{order.customerInfo.phone}</td>
                             <td className="px-4 py-4 whitespace-normal text-xs text-gray-600 max-w-xs">
                                 {order.items.map(item => (
-                                    <div key={`${item.id}-${item.selectedSize}`} className="truncate">
+                                    <div key={`${item.name}-${item.selectedSize}`} className="truncate">
                                         {item.name} ({item.selectedSize > 0 ? `${item.selectedSize}ml` : 'unidad'}) x{item.quantity}
                                     </div>
                                 ))}
