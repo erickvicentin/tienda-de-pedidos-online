@@ -2,6 +2,7 @@ import type { User } from 'firebase/auth'; // Importar User de Firebase
 
 export type Gender = 'Masculina' | 'Femenina' | 'Unisex';
 export type ProductCategory = 'Fragancia' | 'Cosmética' | 'Accesorio' | 'Bazar' | 'Otra';
+export type OrderStatus = 'Pendiente' | 'Confirmado' | 'Retirado' | 'Entregado' | 'Pagado' | 'Cancelado';
 
 
 export interface Product {
@@ -31,6 +32,8 @@ export interface CustomerInfo {
 }
 
 export interface Order {
+  id: string;
+  status: OrderStatus;
   items: CartItem[];
   customerInfo: CustomerInfo;
   totalAmount: number;
@@ -43,8 +46,11 @@ export type ViewState =
   | 'confirmation'
   | 'error'
   | 'admin_login' // Vista para login
+  | 'admin_dashboard'
   | 'admin_product_list'
-  | 'admin_product_form';
+  | 'admin_product_form'
+  | 'admin_order_list';
+
 
 export interface ScriptErrorDetails {
   name?: string;
@@ -55,9 +61,11 @@ export interface ScriptErrorDetails {
 
 export interface AppState {
   products: Product[];
+  orders: Order[];
   cart: CartItem[];
   currentView: ViewState;
   isLoadingProducts: boolean;
+  isLoadingOrders: boolean;
   isSubmittingOrder: boolean;
   error: string | null; // Error general de la app
   confirmationMessage: { title: string; message: string; orderId?: string } | null;
@@ -72,6 +80,7 @@ export interface AppState {
   // Estados de Admin
   editingProduct: Product | null;
   productToDelete: Product | null;
+  orderToDelete: Order | null;
 
   // Estados de Autenticación de Firebase
   currentUser: User | null; // Usuario de Firebase
@@ -105,6 +114,7 @@ export type AppAction =
   | { type: 'SET_SHOW_WELCOME_MODAL', payload: boolean } // Para el modal de bienvenida
   | { type: 'SHOW_SNACKBAR'; payload: string } // For snackbar
   | { type: 'HIDE_SNACKBAR' } // For snackbar
+
   // Acciones de Admin (Productos)
   // Estas acciones ahora actualizarán el estado local DESPUÉS de una operación exitosa en Firestore
   | { type: 'ADMIN_ADD_PRODUCT'; payload: Product } // Payload es el producto con ID de Firestore
@@ -114,6 +124,15 @@ export type AppAction =
   | { type: 'ADMIN_CONFIRM_DELETE_PRODUCT'; payload: Product | null }
   | { type: 'ADMIN_CANCEL_DELETE_PRODUCT' }
   | { type: 'ADMIN_TOGGLE_PRODUCT_VISIBILITY'; payload: { productId: string; isVisible: boolean } }
+
+  // Acciones de Admin (Pedidos con Mock Service)
+  | { type: 'SET_ORDERS_LOADING'; payload: boolean }
+  | { type: 'SET_ORDERS_SUCCESS'; payload: Order[] }
+  | { type: 'SET_ORDERS_ERROR'; payload: string }
+  | { type: 'ADMIN_UPDATE_ORDER_STATUS'; payload: { orderId: string; status: OrderStatus } }
+  | { type: 'ADMIN_CONFIRM_DELETE_ORDER'; payload: Order | null }
+  | { type: 'ADMIN_CANCEL_DELETE_ORDER' }
+  | { type: 'ADMIN_DELETE_ORDER_SUCCESS'; payload: string } // orderId
 
   // Acciones de Autenticación de Firebase
   | { type: 'SET_AUTH_LOADING'; payload: boolean }
