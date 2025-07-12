@@ -12,7 +12,7 @@ const CarouselCard: React.FC<CarouselCardProps> = ({ product }) => {
     <div>
       <div className="bg-white rounded-xl shadow-lg overflow-hidden flex flex-col h-full mx-2">
         <img
-          className="w-full h-48 object-cover bg-gray-200"
+          className="w-full h-100 object-cover bg-gray-200"
           src={product.imageUrl || 'https://via.placeholder.com/300x200.png?text=Sin+Imagen'}
           alt={product.name}
           onError={(e) => (e.currentTarget.src = 'https://via.placeholder.com/300x200.png?text=Error+Img')}

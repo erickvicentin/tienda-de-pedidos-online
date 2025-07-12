@@ -29,4 +29,30 @@ body {
   }
   
   /* Add any other global styles if needed */
+
+/* Carousel fade effect */
+.carousel-fade-edges {
+  position: relative;
+}
+
+.carousel-fade-edges::before,
+.carousel-fade-edges::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 50px; /* Ancho del degradado */
+  z-index: 10;
+  pointer-events: none; /* Permite hacer clic a través del degradado */
+}
+
+.carousel-fade-edges::before {
+  left: 0;
+  background: linear-gradient(to right, rgb(249, 250, 251), transparent);
+}
+
+.carousel-fade-edges::after {
+  right: 0;
+  background: linear-gradient(to left, rgb(249, 250, 251), transparent);
+}
   

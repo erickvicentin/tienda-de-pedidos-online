@@ -47,14 +47,16 @@ const ProductCarousel: React.FC<ProductCarouselProps> = ({ products }) => {
   }
 
   return (
-    <div className="w-full py-8">
-      <Slider {...settings}>
-        {products.map(product => (
-          <div key={product.id}>
-            <CarouselCard product={product} />
-          </div>
-        ))}
-      </Slider>
+    <div className="w-full py-8 relative">
+      <div className="carousel-fade-edges">
+        <Slider {...settings}>
+          {products.map(product => (
+            <div key={product.id}>
+              <CarouselCard product={product} />
+            </div>
+          ))}
+        </Slider>
+      </div>
     </div>
   );
 };
