@@ -76,7 +76,8 @@ function appReducer(state: AppState, action: AppAction): AppState {
         }
         return array;
       };
-      const shuffledProducts = shuffle([...action.payload]);
+      const fragances = action.payload.filter(p => p.category === 'Fragancia');
+      const shuffledProducts = shuffle([...fragances]);
       const carouselProducts = shuffledProducts.slice(0, 12); // Take 12 random products
 
       return {
@@ -603,8 +604,6 @@ const App: React.FC = () => {
       case 'home':
         return <HomeView 
                   products={state.carouselProducts} 
-                  onAddToCart={handleAddToCart} 
-                  onImageClick={handleOpenImagePreview}
                   onGenderSelect={(gender) => dispatch({ type: 'SET_SELECTED_GENDER', payload: gender })}
                 />;
       case 'products':

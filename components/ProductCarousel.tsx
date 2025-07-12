@@ -2,25 +2,23 @@
 import React from 'react';
 import Slider from 'react-slick';
 import { Product } from '../types';
-import ProductCard from './ProductCard';
+import CarouselCard from './CarouselCard'; // Importar la nueva tarjeta
 
 interface ProductCarouselProps {
   products: Product[];
-  onAddToCart: (product: Product, selectedSize: number, priceForSize: number) => void;
-  onImageClick: (imageUrl: string) => void;
 }
 
-const ProductCarousel: React.FC<ProductCarouselProps> = ({ products, onAddToCart, onImageClick }) => {
+const ProductCarousel: React.FC<ProductCarouselProps> = ({ products }) => {
   const settings = {
     dots: false,
     arrows: false,
     infinite: true,
-    speed: 5000, // Velocidad de la transición
+    speed: 5000,
     slidesToShow: 4,
     slidesToScroll: 1,
     autoplay: true,
-    autoplaySpeed: 0, // Para un movimiento continuo
-    cssEase: 'linear', // Transición lineal, sin pausas
+    autoplaySpeed: 0,
+    cssEase: 'linear',
     pauseOnHover: true,
     responsive: [
       {
@@ -49,16 +47,11 @@ const ProductCarousel: React.FC<ProductCarouselProps> = ({ products, onAddToCart
   }
 
   return (
-    <div className="w-full px-4 py-8">
+    <div className="w-full py-8">
       <Slider {...settings}>
         {products.map(product => (
-          <div key={product.id} className="px-2">
-            <ProductCard
-              product={product}
-              onAddToCart={onAddToCart}
-              onImageClick={onImageClick}
-              showDescription={false}
-            />
+          <div key={product.id}>
+            <CarouselCard product={product} />
           </div>
         ))}
       </Slider>

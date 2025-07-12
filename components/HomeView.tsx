@@ -5,14 +5,12 @@ import ProductCarousel from './ProductCarousel';
 
 interface HomeViewProps {
   products: Product[];
-  onAddToCart: (product: Product, selectedSize: number, priceForSize: number) => void;
-  onImageClick: (imageUrl: string) => void;
   onGenderSelect: (gender: string) => void;
 }
 
-const GENDER_OPTIONS = ['Femenina', 'Masculina', 'Unisex', 'Infantil'];
+const GENDER_OPTIONS = ['Todos los Géneros', 'Femenina', 'Masculina', 'Unisex', 'Infantil'];
 
-const HomeView: React.FC<HomeViewProps> = ({ products, onAddToCart, onImageClick, onGenderSelect }) => {
+const HomeView: React.FC<HomeViewProps> = ({ products, onGenderSelect }) => {
   return (
     <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12 text-center">
       <h1 className="text-4xl font-extrabold text-gray-800 mb-4">
@@ -36,11 +34,7 @@ const HomeView: React.FC<HomeViewProps> = ({ products, onAddToCart, onImageClick
 
       <div>
         <h2 className="text-3xl font-bold text-gray-800 mb-6">Descubre nuestros productos</h2>
-        <ProductCarousel
-          products={products}
-          onAddToCart={onAddToCart}
-          onImageClick={onImageClick}
-        />
+        <ProductCarousel products={products} />
       </div>
     </div>
   );
