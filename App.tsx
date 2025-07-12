@@ -104,11 +104,13 @@ function appReducer(state: AppState, action: AppAction): AppState {
               ? { ...item, quantity: item.quantity + 1 }
               : item
           ),
+          snackbarMessage: '¡Producto añadido al carrito!',
         };
       }
       return {
         ...state,
         cart: [...state.cart, { ...product, quantity: 1, selectedSize, price: priceForSize }],
+        snackbarMessage: '¡Producto añadido al carrito!',
       };
     }
     case 'UPDATE_CART_QUANTITY': {
