@@ -1,6 +1,6 @@
 import type { User } from 'firebase/auth'; // Importar User de Firebase
 
-export type Gender = 'Masculina' | 'Femenina' | 'Unisex';
+export type Gender = 'Masculina' | 'Femenina' | 'Unisex' | 'Infantil';
 export type ProductCategory = 'Fragancia' | 'Cosmética' | 'Accesorio' | 'Bazar' | 'Otra';
 export type OrderStatus = 'Pendiente' | 'Confirmado' | 'Retirado' | 'Entregado' | 'Pagado' | 'Cancelado';
 

@@ -255,6 +255,7 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel, is
             <option value="Femenina">Femenina</option>
             <option value="Masculina">Masculina</option>
             <option value="Unisex">Unisex</option>
+            <option value="Infantil">Infantil</option>
           </select>
         </div>
       </div>

@@ -23,7 +23,7 @@ import SettingsIcon from './components/icons/SettingsIcon';
 import AdminView from './components/admin/AdminView';
 import AdminLogin from './components/admin/AdminLogin';
 
-const GENDER_FILTER_OPTIONS: string[] = ['Todos los Géneros', 'Masculina', 'Femenina', 'Unisex'];
+const GENDER_FILTER_OPTIONS: string[] = ['Todos los Géneros', 'Masculina', 'Femenina', 'Unisex', 'Infantil'];
 const ALL_AUTHORS_OPTION = 'Todos los Autores';
 const WHATSAPP_NUMBER = "+543624965665";
 const WHATSAPP_MESSAGE = "Hola, estoy interesado/a en sus productos de Millanel.";
