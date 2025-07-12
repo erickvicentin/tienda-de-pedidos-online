@@ -46,7 +46,8 @@ export const submitOrder = async (orderData: Omit<Order, 'id' | 'status'>): Prom
     const simplifiedItems = orderData.items.map(item => ({
       name: item.name,
       quantity: item.quantity,
-      size: item.selectedSize, // Corregido de item.size a item.selectedSize
+      size: item.selectedSize,
+      price: item.price // Añadir el precio unitario
     }));
 
     const docData = {

@@ -46,59 +46,98 @@ const AdminOrderList: React.FC<AdminOrderListProps> = ({ orders, onUpdateStatus,
     const handlePrintOrder = (order: Order) => {
         const doc = new jsPDF();
         const pageWidth = doc.internal.pageSize.getWidth();
+        const margin = 14;
         const centerText = (text: string, y: number) => {
             const textWidth = doc.getTextWidth(text);
             const textX = (pageWidth - textWidth) / 2;
             doc.text(text, textX, y);
         };
 
+        // Título
         doc.setFontSize(18);
         doc.setFont('helvetica', 'bold');
-        centerText(`Pedido N°: ${order.orderNumber || 'N/A'}`, 20);
+        centerText(`MILLANEL RESISTENCIA - Pedido N°: ${order.orderNumber || 'N/A'}`, 20);
 
+        // Info General
         doc.setFontSize(12);
         doc.setFont('helvetica', 'normal');
-        doc.text(`Fecha: ${formatDate(order.orderDate)}`, 14, 30);
-        doc.text(`Estado: ${order.status}`, 14, 36);
+        doc.text(`Fecha: ${formatDate(order.orderDate)}`, margin, 30);
+        doc.text(`Estado: ${order.status}`, margin, 36);
 
-        doc.line(14, 40, pageWidth - 14, 40); // Separator
+        doc.line(margin, 40, pageWidth - margin, 40);
 
+        // Datos del Cliente
         doc.setFontSize(14);
         doc.setFont('helvetica', 'bold');
-        doc.text('Datos del Cliente', 14, 48);
+        doc.text('Datos del Cliente', margin, 48);
         doc.setFontSize(12);
         doc.setFont('helvetica', 'normal');
-        doc.text(`Nombre: ${order.customerInfo.name}`, 14, 56);
-        doc.text(`Dirección: ${order.customerInfo.address}`, 14, 62);
-        doc.text(`Teléfono: ${order.customerInfo.phone}`, 14, 68);
+        doc.text(`Nombre: ${order.customerInfo.name}`, margin, 56);
+        doc.text(`Dirección: ${order.customerInfo.address}`, margin, 62);
+        doc.text(`Teléfono: ${order.customerInfo.phone}`, margin, 68);
         if (order.customerInfo.notes) {
-            doc.text(`Notas: ${order.customerInfo.notes}`, 14, 74);
+            const notesLines = doc.splitTextToSize(`Notas: ${order.customerInfo.notes}`, pageWidth - margin * 2);
+            doc.text(notesLines, margin, 74);
         }
 
-        doc.line(14, 80, pageWidth - 14, 80); // Separator
-
-        doc.setFontSize(14);
-        doc.setFont('helvetica', 'bold');
-        doc.text('Detalle del Pedido', 14, 88);
-        doc.setFontSize(12);
-        doc.setFont('helvetica', 'normal');
-
-        let yPosition = 96;
-        order.items.forEach(item => {
-            const itemText = `${item.name} (${item.selectedSize > 0 ? `${item.selectedSize}ml` : 'unidad'}) x${item.quantity}`;
-            const priceText = `${(item.price * item.quantity).toFixed(2)}`;
-            doc.text(itemText, 14, yPosition);
-            doc.text(priceText, pageWidth - 14 - doc.getTextWidth(priceText), yPosition);
-            yPosition += 6;
-        });
-
-        doc.line(14, yPosition, pageWidth - 14, yPosition); // Separator
+        let yPosition = 85;
+        if (order.customerInfo.notes) {
+            yPosition = 74 + (doc.getTextDimensions(doc.splitTextToSize(`Notas: ${order.customerInfo.notes}`, pageWidth - margin * 2)).h) + 5;
+        }
+        doc.line(margin, yPosition, pageWidth - margin, yPosition);
         yPosition += 8;
 
+        // Detalle del Pedido - Formato Tabla
+        doc.setFontSize(14);
+        doc.setFont('helvetica', 'bold');
+        doc.text('Detalle del Pedido', margin, yPosition);
+        yPosition += 8;
+
+        // Encabezados de la tabla
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'bold');
+        const colDesc = margin;
+        const colSubtotal = pageWidth - margin;
+        const colUnitPrice = colSubtotal - 30;
+        const colQty = colUnitPrice - 20;
+
+        doc.text('Descripción', colDesc, yPosition);
+        doc.text('Cant.', colQty, yPosition, { align: 'right' });
+        doc.text('P. Unit.', colUnitPrice, yPosition, { align: 'right' });
+        doc.text('Subtotal', colSubtotal, yPosition, { align: 'right' });
+        yPosition += 3;
+        doc.line(margin, yPosition, pageWidth - margin, yPosition);
+        yPosition += 5;
+
+        // Items de la tabla
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'normal');
+        order.items.forEach(item => {
+            const description = `${item.name} (${item.selectedSize > 0 ? `${item.selectedSize}ml` : 'unidad'})`;
+            const quantity = item.quantity.toString();
+            const unitPrice = `${item.price.toFixed(2)}`;
+            const subtotal = `${(item.price * item.quantity).toFixed(2)}`;
+
+            const descLines = doc.splitTextToSize(description, colQty - colDesc - 2);
+            const itemHeight = descLines.length * 5;
+
+            doc.text(descLines, colDesc, yPosition);
+            doc.text(quantity, colQty, yPosition, { align: 'right' });
+            doc.text(unitPrice, colUnitPrice, yPosition, { align: 'right' });
+            doc.text(subtotal, colSubtotal, yPosition, { align: 'right' });
+
+            yPosition += itemHeight + 2; // Espacio extra entre items
+        });
+
+        yPosition += 3;
+        doc.line(margin, yPosition, pageWidth - margin, yPosition);
+        yPosition += 8;
+
+        // Total
         doc.setFontSize(16);
         doc.setFont('helvetica', 'bold');
         const totalText = `Total: ${order.totalAmount.toFixed(2)}`;
-        doc.text(totalText, pageWidth - 14 - doc.getTextWidth(totalText), yPosition);
+        doc.text(totalText, pageWidth - margin, yPosition, { align: 'right' });
 
         doc.save(`pedido-${order.orderNumber || order.id}.pdf`);
     };
