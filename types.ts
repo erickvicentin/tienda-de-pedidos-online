@@ -43,6 +43,7 @@ export interface Order {
 }
 
 export type ViewState =
+  | 'home'
   | 'products'
   | 'cart'
   | 'confirmation'
@@ -63,6 +64,7 @@ export interface ScriptErrorDetails {
 
 export interface AppState {
   products: Product[];
+  carouselProducts: Product[];
   orders: Order[];
   cart: CartItem[];
   currentView: ViewState;
