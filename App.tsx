@@ -418,10 +418,10 @@ const App: React.FC = () => {
         } catch (notificationError) {
           console.error("Error de red al enviar la notificación a Google Apps Script:", notificationError);
         }
-        const successMessage = `Tu pedido ha sido registrado con éxito.\nID de Pedido: ${result.orderId}\n\nNos pondremos en contacto contigo a la brevedad para coordinar la entrega.`;
+        const successMessage = `Tu pedido ha sido registrado con éxito. Nos pondremos en contacto contigo a la brevedad para coordinar la entrega.`;
         dispatch({
           type: 'SET_ORDER_SUCCESS',
-          payload: { title: '¡Pedido Confirmado!', message: successMessage, orderId: result.orderId }
+          payload: { title: '¡Pedido Confirmado!', message: successMessage }
         });
       } else {
         const detailedErrorMessage = result.message || 'Ocurrió un error desconocido al realizar el pedido.';
