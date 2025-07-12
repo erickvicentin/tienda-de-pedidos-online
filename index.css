@@ -1,3 +1,6 @@
+@import "slick-carousel/slick/slick.css";
+@import "slick-carousel/slick/slick-theme.css";
+
 /* Ensure basic body styling for consistency, if not already present elsewhere */
 body {
     margin: 0;

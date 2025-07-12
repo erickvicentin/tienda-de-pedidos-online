@@ -22,6 +22,7 @@ import WhatsAppIcon from './components/icons/WhatsAppIcon';
 import SettingsIcon from './components/icons/SettingsIcon';
 import AdminView from './components/admin/AdminView';
 import AdminLogin from './components/admin/AdminLogin';
+import HomeView from './components/HomeView';
 
 const GENDER_FILTER_OPTIONS: string[] = ['Todos los Géneros', 'Masculina', 'Femenina', 'Unisex', 'Infantil'];
 const ALL_AUTHORS_OPTION = 'Todos los Autores';
@@ -31,9 +32,10 @@ const LOCAL_STORAGE_VISITED_KEY = 'millanelResistenciaHasVisited';
 
 const initialAppState: AppState = {
   products: [],
+  carouselProducts: [],
   orders: [],
   cart: [],
-  currentView: 'products',
+  currentView: 'home',
   isLoadingProducts: true,
   isLoadingOrders: true,
   isSubmittingOrder: false,
@@ -63,9 +65,24 @@ function appReducer(state: AppState, action: AppAction): AppState {
     case 'SET_PRODUCTS_SUCCESS': {
       const uniqueAuthors = Array.from(new Set(action.payload.map(p => p.author))).sort();
       const availableAuthors = [ALL_AUTHORS_OPTION, ...uniqueAuthors];
+      
+      // Fisher-Yates shuffle algorithm
+      const shuffle = (array: Product[]) => {
+        let currentIndex = array.length, randomIndex;
+        while (currentIndex !== 0) {
+          randomIndex = Math.floor(Math.random() * currentIndex);
+          currentIndex--;
+          [array[currentIndex], array[randomIndex]] = [array[randomIndex], array[currentIndex]];
+        }
+        return array;
+      };
+      const shuffledProducts = shuffle([...action.payload]);
+      const carouselProducts = shuffledProducts.slice(0, 12); // Take 12 random products
+
       return {
         ...state,
         products: action.payload,
+        carouselProducts: carouselProducts,
         isLoadingProducts: false,
         availableAuthors,
         adminOperationError: null
@@ -147,13 +164,13 @@ function appReducer(state: AppState, action: AppAction): AppState {
     case 'CLEAR_ERROR':
       return { ...state, error: null };
     case 'CLEAR_CONFIRMATION':
-      return { ...state, confirmationMessage: null, currentView: 'products' };
+      return { ...state, confirmationMessage: null, currentView: 'home' };
     case 'SET_SEARCH_TERM':
-      return { ...state, searchTerm: action.payload };
+      return { ...state, searchTerm: action.payload, currentView: 'products' };
     case 'SET_SELECTED_GENDER':
-      return { ...state, selectedGender: action.payload };
+      return { ...state, selectedGender: action.payload, currentView: 'products' };
     case 'SET_SELECTED_AUTHOR':
-      return { ...state, selectedAuthor: action.payload };
+      return { ...state, selectedAuthor: action.payload, currentView: 'products' };
     case 'RESET_AUTHOR_FILTER_IF_NEEDED':
       if (state.selectedAuthor !== ALL_AUTHORS_OPTION && !state.availableAuthors.includes(state.selectedAuthor)) {
         return { ...state, selectedAuthor: ALL_AUTHORS_OPTION };
@@ -289,7 +306,7 @@ const App: React.FC = () => {
   useEffect(() => {
     try {
       const hasVisited = localStorage.getItem(LOCAL_STORAGE_VISITED_KEY);
-      if (!hasVisited && state.currentView === 'products') {
+      if (!hasVisited && state.currentView === 'home') {
         dispatch({ type: 'SET_SHOW_WELCOME_MODAL', payload: true });
         localStorage.setItem(LOCAL_STORAGE_VISITED_KEY, 'true');
       }
@@ -583,6 +600,13 @@ const App: React.FC = () => {
     }
 
     switch (state.currentView) {
+      case 'home':
+        return <HomeView 
+                  products={state.carouselProducts} 
+                  onAddToCart={handleAddToCart} 
+                  onImageClick={handleOpenImagePreview}
+                  onGenderSelect={(gender) => dispatch({ type: 'SET_SELECTED_GENDER', payload: gender })}
+                />;
       case 'products':
       case 'error':
         return <ProductList products={filteredProducts} onAddToCart={handleAddToCart} onImageClick={handleOpenImagePreview} />;
@@ -597,7 +621,7 @@ const App: React.FC = () => {
         <Navbar
           cartItemCount={cartItemCount}
           onCartClick={() => dispatch({ type: 'SET_VIEW', payload: 'cart' })}
-          onLogoClick={() => dispatch({ type: 'SET_VIEW', payload: 'products' })}
+          onLogoClick={() => dispatch({ type: 'SET_VIEW', payload: 'home' })}
           searchTerm={state.searchTerm}
           onSearchChange={(term) => dispatch({ type: 'SET_SEARCH_TERM', payload: term })}
           genderOptions={GENDER_FILTER_OPTIONS}
