@@ -29,6 +29,7 @@ export interface CustomerInfo {
   phone: string;
   email?: string;
   address: string;
+  notes?: string;
 }
 
 export interface Order {
