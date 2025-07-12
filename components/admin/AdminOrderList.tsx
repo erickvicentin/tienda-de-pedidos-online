@@ -1,8 +1,10 @@
 
 import React from 'react';
+import jsPDF from 'jspdf';
 import { Order, OrderStatus } from '../../types';
 import { ORDER_STATUS_OPTIONS } from '../../constants';
 import TrashIcon from '../icons/TrashIcon';
+import PrinterIcon from '../icons/PrinterIcon';
 
 interface AdminOrderListProps {
     orders: Order[];
@@ -41,6 +43,66 @@ const AdminOrderList: React.FC<AdminOrderListProps> = ({ orders, onUpdateStatus,
         onUpdateStatus(orderId, status);
     };
 
+    const handlePrintOrder = (order: Order) => {
+        const doc = new jsPDF();
+        const pageWidth = doc.internal.pageSize.getWidth();
+        const centerText = (text: string, y: number) => {
+            const textWidth = doc.getTextWidth(text);
+            const textX = (pageWidth - textWidth) / 2;
+            doc.text(text, textX, y);
+        };
+
+        doc.setFontSize(18);
+        doc.setFont('helvetica', 'bold');
+        centerText(`Pedido N°: ${order.orderNumber || 'N/A'}`, 20);
+
+        doc.setFontSize(12);
+        doc.setFont('helvetica', 'normal');
+        doc.text(`Fecha: ${formatDate(order.orderDate)}`, 14, 30);
+        doc.text(`Estado: ${order.status}`, 14, 36);
+
+        doc.line(14, 40, pageWidth - 14, 40); // Separator
+
+        doc.setFontSize(14);
+        doc.setFont('helvetica', 'bold');
+        doc.text('Datos del Cliente', 14, 48);
+        doc.setFontSize(12);
+        doc.setFont('helvetica', 'normal');
+        doc.text(`Nombre: ${order.customerInfo.name}`, 14, 56);
+        doc.text(`Dirección: ${order.customerInfo.address}`, 14, 62);
+        doc.text(`Teléfono: ${order.customerInfo.phone}`, 14, 68);
+        if (order.customerInfo.notes) {
+            doc.text(`Notas: ${order.customerInfo.notes}`, 14, 74);
+        }
+
+        doc.line(14, 80, pageWidth - 14, 80); // Separator
+
+        doc.setFontSize(14);
+        doc.setFont('helvetica', 'bold');
+        doc.text('Detalle del Pedido', 14, 88);
+        doc.setFontSize(12);
+        doc.setFont('helvetica', 'normal');
+
+        let yPosition = 96;
+        order.items.forEach(item => {
+            const itemText = `${item.name} (${item.selectedSize > 0 ? `${item.selectedSize}ml` : 'unidad'}) x${item.quantity}`;
+            const priceText = `${(item.price * item.quantity).toFixed(2)}`;
+            doc.text(itemText, 14, yPosition);
+            doc.text(priceText, pageWidth - 14 - doc.getTextWidth(priceText), yPosition);
+            yPosition += 6;
+        });
+
+        doc.line(14, yPosition, pageWidth - 14, yPosition); // Separator
+        yPosition += 8;
+
+        doc.setFontSize(16);
+        doc.setFont('helvetica', 'bold');
+        const totalText = `Total: ${order.totalAmount.toFixed(2)}`;
+        doc.text(totalText, pageWidth - 14 - doc.getTextWidth(totalText), yPosition);
+
+        doc.save(`pedido-${order.orderNumber || order.id}.pdf`);
+    };
+
     return (
         <div className="overflow-x-auto bg-white shadow-md rounded-lg">
             <table className="min-w-full divide-y divide-gray-200">
@@ -54,7 +116,7 @@ const AdminOrderList: React.FC<AdminOrderListProps> = ({ orders, onUpdateStatus,
                         <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Items</th>
                         <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total</th>
                         <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</th>
-                        <th scope="col" className="px-1 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Acción</th>
+                        <th scope="col" className="px-1 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
                     </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
@@ -93,15 +155,26 @@ const AdminOrderList: React.FC<AdminOrderListProps> = ({ orders, onUpdateStatus,
                                 </select>
                             </td>
                             <td className="px-1 py-4 text-center">
-                                <button
-                                    onClick={() => onDeleteOrder(order)}
-                                    disabled={disabled}
-                                    className="p-2 rounded-full text-gray-400 hover:text-red-600 hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed"
-                                    aria-label={`Eliminar pedido ${order.id}`}
-                                    title="Eliminar Pedido"
-                                >
-                                    <TrashIcon className="h-5 w-5" />
-                                </button>
+                                <div className="flex justify-center items-center space-x-1">
+                                    <button
+                                        onClick={() => handlePrintOrder(order)}
+                                        disabled={disabled}
+                                        className="p-2 rounded-full text-gray-400 hover:text-blue-600 hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                                        aria-label={`Imprimir pedido ${order.id}`}
+                                        title="Imprimir Pedido"
+                                    >
+                                        <PrinterIcon className="h-5 w-5" />
+                                    </button>
+                                    <button
+                                        onClick={() => onDeleteOrder(order)}
+                                        disabled={disabled}
+                                        className="p-2 rounded-full text-gray-400 hover:text-red-600 hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                                        aria-label={`Eliminar pedido ${order.id}`}
+                                        title="Eliminar Pedido"
+                                    >
+                                        <TrashIcon className="h-5 w-5" />
+                                    </button>
+                                </div>
                             </td>
                         </tr>
                     ))}
