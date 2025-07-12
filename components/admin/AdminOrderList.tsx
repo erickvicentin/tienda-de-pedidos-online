@@ -47,7 +47,6 @@ const AdminOrderList: React.FC<AdminOrderListProps> = ({ orders, onUpdateStatus,
                 <thead className="bg-gray-50">
                     <tr>
                         <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">N° Pedido</th>
-                        <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID Pedido</th>
                         <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha</th>
                         <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nombre Cliente</th>
                         <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Dirección</th>
@@ -64,15 +63,12 @@ const AdminOrderList: React.FC<AdminOrderListProps> = ({ orders, onUpdateStatus,
                             <td className="px-4 py-4 whitespace-nowrap text-sm font-bold text-gray-900">
                                 {order.orderNumber || 'N/A'}
                             </td>
-                            <td className="px-4 py-4 whitespace-nowrap">
-                                <div className="text-xs text-gray-500" title={order.id}>{order.id.substring(0, 12)}...</div>
-                            </td>
                             <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">{formatDate(order.orderDate)}</td>
                             <td className="px-4 py-4 whitespace-nowrap">
                                 <div className="text-sm font-medium text-gray-900">{order.customerInfo.name}</div>
                             </td>
                             <td className="px-4 py-4 whitespace-nowrap">
-                                <div className="text-sm text-gray-500 max-w-[200px] truncate" title={order.customerInfo.address}>{order.customerInfo.address}</div>
+                                <div className="text-sm text-gray-500 max-w-md truncate" title={order.customerInfo.address}>{order.customerInfo.address}</div>
                             </td>
                             <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">{order.customerInfo.phone}</td>
                             <td className="px-4 py-4 whitespace-normal text-xs text-gray-600 max-w-xs">
