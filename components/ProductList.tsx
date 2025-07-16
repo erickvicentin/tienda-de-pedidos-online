@@ -6,10 +6,11 @@ import ProductCard from './ProductCard';
 interface ProductListProps {
   products: Product[];
   onAddToCart: (product: Product, selectedSize: number, priceForSize: number) => void;
+  onDirectOrder: (product: Product, selectedSize: number, priceForSize: number) => void;
   onImageClick: (imageUrl: string) => void; // Nueva prop
 }
 
-const ProductList: React.FC<ProductListProps> = ({ products, onAddToCart, onImageClick }) => {
+const ProductList: React.FC<ProductListProps> = ({ products, onAddToCart, onDirectOrder, onImageClick }) => {
   if (products.length === 0) {
     return <p className="text-center text-gray-500 py-10 text-lg">No se encontraron productos que coincidan con tu búsqueda o filtros.</p>;
   }
@@ -23,6 +24,7 @@ const ProductList: React.FC<ProductListProps> = ({ products, onAddToCart, onImag
             key={product.id}
             product={product}
             onAddToCart={onAddToCart}
+            onDirectOrder={onDirectOrder}
             onImageClick={onImageClick} // Pasar la prop
           />
         ))}
