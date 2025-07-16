@@ -387,6 +387,11 @@ const App: React.FC = () => {
     dispatch({ type: 'ADD_TO_CART', payload: { product, selectedSize, priceForSize } });
   };
 
+  const handleDirectOrder = (product: Product, selectedSize: number, priceForSize: number) => {
+    dispatch({ type: 'ADD_TO_CART', payload: { product, selectedSize, priceForSize } });
+    dispatch({ type: 'SET_VIEW', payload: 'cart' });
+  };
+
   const handleShowWelcomeModalExplicitly = () => {
     dispatch({ type: 'SHOW_WELCOME_MODAL_EXPLICIT' });
   };
@@ -610,9 +615,9 @@ const App: React.FC = () => {
                 />;
       case 'products':
       case 'error':
-        return <ProductList products={filteredProducts} onAddToCart={handleAddToCart} onImageClick={handleOpenImagePreview} />;
+        return <ProductList products={filteredProducts} onAddToCart={handleAddToCart} onDirectOrder={handleDirectOrder} onImageClick={handleOpenImagePreview} />;
       default:
-        return <ProductList products={filteredProducts} onAddToCart={handleAddToCart} onImageClick={handleOpenImagePreview} />;
+        return <ProductList products={filteredProducts} onAddToCart={handleAddToCart} onDirectOrder={handleDirectOrder} onImageClick={handleOpenImagePreview} />;
     }
   };
 

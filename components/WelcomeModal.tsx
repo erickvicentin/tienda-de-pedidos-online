@@ -20,7 +20,7 @@ const WelcomeModal: React.FC<WelcomeModalProps> = ({ onClose }) => {
                             <strong>Explora</strong>: Usa la barra de búsqueda y los filtros (género, autor) para encontrar tus productos favoritos.
                         </li>
                         <li>
-                            <strong>Añade al Carrito</strong>: ¿Viste algo que te gusta? Elige el tamaño (si es una fragancia) y haz clic en 'Añadir'.
+                            <strong>Añade al Carrito</strong>: ¿Viste algo que te gusta? Elige el tamaño (si es una fragancia) y haz clic en 'Añadir', o en 'Pedir' si quieres ir directamente al carrito con ese producto.
                         </li>
                         <li>
                             <strong>Revisa tu Pedido</strong>: Haz clic en el ícono del carrito (arriba a la derecha) para ver los productos seleccionados y ajustar cantidades.
