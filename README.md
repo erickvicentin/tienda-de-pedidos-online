@@ -1,15 +1,3 @@
-# Run and deploy your AI Studio app
-
-This contains everything you need to run your app locally.
-
-## Run Locally
-
-**Prerequisites:**  Node.js
-
-
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
-# tienda-de-pedidos-online
+# About tienda-de-pedidos-online app
+Please refer to the information about this repository and its architecture in the following documentation:
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/erickvicentin/tienda-de-pedidos-online)
