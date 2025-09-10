@@ -6,7 +6,7 @@
   "type": "module",
   "homepage": "https://erickvicentin.github.io/tienda-de-pedidos-online",
   "engines": {
-    "node": "18.x"
+    "node": "22.x"
   },
   "scripts": {
     "dev": "vite build && vite",
