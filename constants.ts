@@ -3,9 +3,9 @@
 import { Product, Gender, ProductCategory, OrderStatus } from './types';
 
 export const GLOBAL_SIZE_PRICES: { [size: number]: number } = {
-  30: 11000.00,
-  60: 14000.00,
-  100: 20000.00,
+  30: 12000.00,
+  60: 16000.00,
+  100: 22000.00,
   // 0: 5000.00, // Removed: Size 0 pricing is deprecated; use manualPrice for non-fragrances.
 };
 
