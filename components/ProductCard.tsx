@@ -7,11 +7,12 @@ import { GLOBAL_SIZE_PRICES } from '../constants';
 interface ProductCardProps {
   product: Product;
   onAddToCart: (product: Product, selectedSize: number, priceForSize: number) => void;
+  onDirectOrder: (product: Product, selectedSize: number, priceForSize: number) => void;
   onImageClick: (imageUrl: string) => void;
   showDescription?: boolean; // Nueva propiedad opcional
 }
 
-const ProductCard: React.FC<ProductCardProps> = ({ product, onAddToCart, onImageClick, showDescription = true }) => {
+const ProductCard: React.FC<ProductCardProps> = ({ product, onAddToCart, onDirectOrder, onImageClick, showDescription = true }) => {
   const isFragrance = product.category === 'Fragancia';
 
   const getInitialSelectableSize = () => {
@@ -47,6 +48,14 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onAddToCart, onImage
       // For fragrances, it's the actual selected size.
       const sizeForCart = isFragrance ? selectedSize : (product.sizes.length > 0 ? product.sizes[0] : 0);
       onAddToCart(product, sizeForCart, priceToAdd);
+    }
+  };
+
+  const handleDirectOrderClick = () => {
+    const priceToAdd = currentPrice;
+    if (priceToAdd > 0) {
+      const sizeForCart = isFragrance ? selectedSize : (product.sizes.length > 0 ? product.sizes[0] : 0);
+      onDirectOrder(product, sizeForCart, priceToAdd);
     }
   };
 
@@ -111,15 +120,24 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onAddToCart, onImage
 
           <div className="flex justify-between items-center mt-auto">
             <p className="text-2xl font-bold text-primary">
-              {currentPrice > 0 ? `${currentPrice.toFixed(2)}` : 'N/D'}
+              {currentPrice > 0 ? `$${currentPrice}` : 'N/D'}
             </p>
-            <button
-              onClick={handleAddToCartClick}
-              disabled={!canAddToCart}
-              className="bg-accent hover:bg-purple-600 text-white font-semibold py-2 px-4 rounded-lg shadow-md hover:shadow-lg transition-all duration-200 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-opacity-50 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Añadir
-            </button>
+            <div className="flex items-center space-x-2">
+              <button
+                onClick={handleDirectOrderClick}
+                disabled={!canAddToCart}
+                className="bg-primary hover:bg-primary-dark text-white font-semibold py-2 px-3 rounded-lg shadow-md hover:shadow-lg transition-all duration-200 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-primary-focus focus:ring-opacity-50 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+              >
+                Pedir
+              </button>
+              <button
+                onClick={handleAddToCartClick}
+                disabled={!canAddToCart}
+                className="bg-accent hover:bg-purple-600 text-white font-semibold py-2 px-3 rounded-lg shadow-md hover:shadow-lg transition-all duration-200 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-opacity-50 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+              >
+                Añadir
+              </button>
+            </div>
           </div>
         </div>
       </div>
