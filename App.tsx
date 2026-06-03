@@ -1,4 +1,4 @@
-import React, { useEffect, useCallback, useMemo, useReducer } from 'react';
+import React, { useEffect, useCallback, useMemo, useReducer, useRef } from 'react';
 import {
   onAuthStateChanged,
   User as FirebaseUser,
@@ -294,12 +294,18 @@ function appReducer(state: AppState, action: AppAction): AppState {
 
 const App: React.FC = () => {
   const [state, dispatch] = useReducer(appReducer, initialAppState);
+  const currentViewRef = useRef(state.currentView);
+
+  useEffect(() => {
+    currentViewRef.current = state.currentView;
+  }, [state.currentView]);
 
   useEffect(() => {
     dispatch({ type: 'SET_AUTH_LOADING', payload: true });
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       dispatch({ type: 'SET_CURRENT_USER', payload: user as FirebaseUser | null });
-      if (!user && state.currentView.startsWith('admin_') && state.currentView !== 'admin_login') {
+      const currentView = currentViewRef.current;
+      if (!user && currentView.startsWith('admin_') && currentView !== 'admin_login') {
         dispatch({ type: 'SET_VIEW', payload: 'admin_login' });
       }
     });
